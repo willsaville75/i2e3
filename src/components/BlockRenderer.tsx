@@ -89,9 +89,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
   // Render the block component with error boundary
   try {
     return (
-      <div className={className} onClick={onClick}>
-        <BlockComponent {...props} />
-      </div>
+      <BlockComponent {...props} className={className} onClick={onClick} />
     );
   } catch (error) {
     // Handle render errors

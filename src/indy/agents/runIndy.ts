@@ -8,8 +8,8 @@ import { runAgent } from './orchestrator';
  * @param memory - Optional memory context for the agent
  * @returns Object containing the selected agent name and result
  */
-export async function runIndy(input: string, memory?: any) {
+export async function runIndy(input: string) {
   const agentName = classifyIntentToAgent(input);
-  const result = await runAgent(agentName, input, memory);
+  const result = await runAgent(agentName, input);
   return { agentName, result };
 } 

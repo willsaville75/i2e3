@@ -54,18 +54,6 @@ Return ONLY valid JSON in this EXACT format:
   "background": { "type": "color", "color": "blue", "colorIntensity": "medium" }
 }
 
-BACKGROUND RULES:
-- For solid colors: { "type": "color", "color": "blue", "colorIntensity": "medium" }
-- For gradients: { "type": "gradient", "gradient": "preset_name", "colorIntensity": "medium" }
-- For images: { "type": "image", "image": { "url": "image_url", "position": "center", "size": "cover" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.4 } }
-- For videos: { "type": "video", "video": { "url": "video_url", "poster": "poster_image_url" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.3 } }
-- Available gradient presets: "sunset", "ocean", "purple", "forest", "fire", "sky", "rose", "mint"
-- Image positions: "center", "top", "bottom", "left", "right"
-- Image sizes: "cover", "contain", "auto"
-- Match the background type to user intent - if they mention "image", "photo", "picture" use type "image"
-- If they mention "video", "clip", "footage" use type "video"
-- If user mentions specific gradient colors, use the closest preset name
-
 Make the content engaging and relevant to: "${userMessage}". No explanations, just JSON.`;
 
       // Call AI with optimized parameters

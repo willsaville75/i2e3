@@ -158,26 +158,10 @@ export const backgroundSchema = {
       "default": "medium"
     },
     "gradient": {
-      "type": "object",
-      "title": "Gradient Settings",
-      "properties": {
-        "direction": {
-          "type": "string",
-          "title": "Gradient Direction",
-          "enum": gradientValues,
-          "default": "toRight"
-        },
-        "fromColor": {
-          "type": "string",
-          "title": "From Color",
-          "default": "#667eea"
-        },
-        "toColor": {
-          "type": "string",
-          "title": "To Color",
-          "default": "#764ba2"
-        }
-      }
+      "type": "string",
+      "title": "Gradient Preset",
+      "enum": ["sunset", "ocean", "purple", "forest", "fire", "sky", "rose", "mint"],
+      "default": "sunset"
     },
     "image": {
       "type": "object",

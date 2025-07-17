@@ -9,11 +9,8 @@ import * as iconElement from './icon/index'
 import * as avatarElement from './avatar/index'
 import * as badgeElement from './badge/index'
 import * as linkElement from './link/index'
-import * as inputElement from './input/index'
 import * as textareaElement from './textarea/index'
-import * as selectElement from './select/index'
 import * as cardElement from './card/index'
-import * as alertElement from './alert/index'
 import * as videoElement from './video/index'
 
 export const elementRegistry: ElementRegistry = {}
@@ -28,11 +25,8 @@ const elementModules = {
   avatar: avatarElement,
   badge: badgeElement,
   link: linkElement,
-  input: inputElement,
   textarea: textareaElement,
-  select: selectElement,
   card: cardElement,
-  alert: alertElement,
   video: videoElement,
 }
 

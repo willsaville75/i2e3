@@ -1,6 +1,5 @@
 import { Router, type Request, type Response } from 'express'
 import { runAgent, classifyIntentToAgent } from '../../indy/agents/orchestrator'
-import { prepareBlockAIContext } from '../../blocks/utils/prepareBlockAIContext'
 
 const router: Router = Router()
 
@@ -41,17 +40,11 @@ router.post('/generate', async (req: Request, res: Response) => {
         tokens: tokens || {}
       };
     } else if (agentName === 'runIndyBlockAgent') {
-      // Prepare proper AI context with schema, defaults, and aiHints
-      const context = prepareBlockAIContext(
-        blockType,
-        tokens || { colors: [], spacing: [] },
-        currentData ? 'update' : 'create'
-      );
-      
       agentInput = {
         context: {
-          ...context,
-          current: currentData // Add current data to the context
+          blockType,
+          current: currentData,
+          intent: currentData ? 'update' : 'create'
         },
         model: 'gpt-4o',
         instructions: userInput

@@ -1,13 +1,10 @@
-// Intent classification utility
-export type BlockIntent = 'create' | 'update' | 'replace';
-
 export interface ClassifyIntentInput {
   userInput: string;
   currentData?: any;
 }
 
 export interface ClassifyIntentOutput {
-  intent: BlockIntent;
+  intent: 'create' | 'update' | 'replace';
   confidence: number;
   reasoning: string;
 }

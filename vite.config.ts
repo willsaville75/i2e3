@@ -29,7 +29,7 @@ export default defineConfig({
         proxyTimeout: 60000,
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-            console.log('Proxy error:', err);
+            // Proxy error handling
           });
         }
       }

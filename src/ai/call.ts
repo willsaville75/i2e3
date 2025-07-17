@@ -23,9 +23,6 @@ export interface CallAIResponse {
  * Main function to call OpenAI API
  */
 export async function callAI(input: CallAIInput): Promise<string> {
-  const startTime = Date.now();
-  console.log(`🚀 AI Call: Starting with model ${input.model || getDefaultModel()} (${Date.now() - startTime}ms)`);
-  
   const { 
     prompt, 
     model = getDefaultModel(), 
@@ -34,25 +31,14 @@ export async function callAI(input: CallAIInput): Promise<string> {
     systemMessage = 'You are an expert web developer creating structured block configurations for a website builder.'
   } = input;
   
-  console.log(`⚙️  AI Call: Config parsed (${Date.now() - startTime}ms)`);
-  
   // Check if OpenAI is configured
   if (!isOpenAIConfigured()) {
     throw new Error('OpenAI is not configured. Please set OPENAI_API_KEY environment variable.');
   }
   
-  console.log(`✅ AI Call: OpenAI configured (${Date.now() - startTime}ms)`);
-  
   try {
-    console.log(`🔧 AI Call: Creating OpenAI client (${Date.now() - startTime}ms)`);
     const client = await createOpenAIClient();
-    console.log(`📡 AI Call: Client created, making API request (${Date.now() - startTime}ms)`);
-    console.log(`📝 AI Call: Prompt length: ${prompt.length} chars, Model: ${model}, MaxTokens: ${maxTokens}`);
     
-    const apiStartTime = Date.now();
-    console.log(`🌐 AI Call: Making actual HTTP request to OpenAI (${Date.now() - startTime}ms)`);
-    
-    // OPTIMIZATION: Add request timeout and streaming options
     const response = await client.chat.completions.create({
       model,
       messages: [
@@ -67,21 +53,14 @@ export async function callAI(input: CallAIInput): Promise<string> {
       ],
       max_tokens: maxTokens,
       temperature,
-      // OPTIMIZATION: Add streaming for faster response
-      stream: false // Keep false for now but add timeout
-      // Note: timeout is handled at the HTTP agent level, not here
+      stream: false
     });
     
-    console.log(`🎯 AI Call: OpenAI HTTP response received in ${Date.now() - apiStartTime}ms (${Date.now() - startTime}ms total)`);
-    
-    console.log(`🔍 AI Call: Extracting content from response (${Date.now() - startTime}ms)`);
     const content = response.choices[0]?.message?.content;
     if (!content) {
       throw new Error('No response content received from OpenAI');
     }
     
-    console.log(`📏 AI Call: Response content length: ${content.length} chars (${Date.now() - startTime}ms)`);
-    console.log(`✅ AI Call: Complete success (${Date.now() - startTime}ms total)`);
     return content;
     
   } catch (error) {

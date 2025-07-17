@@ -39,7 +39,7 @@ export const Icon: React.FC<IconProps> = ({
   if (!IconComponent) {
     console.warn(`Icon "${name}" (${iconName}) not found in Heroicons`);
     // Return a default icon or null
-    const DefaultIcon = HeroIcons.QuestionMarkCircleIcon;
+    const DefaultIcon = HeroIcons.QuestionMarkCircleIcon as any;
     return (
       <DefaultIcon
         className={`${sizeClasses[size]} ${className}`.trim()}

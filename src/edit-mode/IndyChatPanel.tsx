@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { runIndyAction, applyIndyAction } from '../indy';
-import { useBlocksStore } from '../stores/blocksStore';
-import { useIndyChatStore } from '../stores/indyChatStore';
+import { useBlocksStore } from '../store/blocksStore';
+import { useIndyChatStore } from '../store/indyChatStore';
 
 /**
  * IndyChatPanel - A floating chat assistant for interacting with Indy agents
@@ -24,28 +24,25 @@ export const IndyChatPanel: React.FC = () => {
   } = useIndyChatStore();
 
   // Blocks store for managing blocks on the page (shared with canvas renderer)
-  const { 
-    blocks, 
-    selectedBlockId, 
-    addBlock, 
-    updateBlock,
-    setSelectedBlock,
-    deleteBlock
+    const {
+    blocks,
+    selectedIndex,
+    setSelectedIndex
   } = useBlocksStore();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+
+  // Get selected block from index
+  const selectedBlock = selectedIndex !== null ? blocks[selectedIndex] : null;
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
     const userMessage = input.trim();
     const startTime = Date.now();
-    console.log(`🎬 UI: handleSend started (${Date.now() - startTime}ms)`);
-    
     // Add user message to chat
     addMessage('user', userMessage);
-    console.log(`💬 UI: User message added to chat (${Date.now() - startTime}ms)`);
     
     // Clear input
     setInput('');
@@ -54,73 +51,33 @@ export const IndyChatPanel: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Determine context based on selected block
-      const selectedBlock = selectedBlockId ? blocks.find(b => b.id === selectedBlockId) : null;
-      const blockType = selectedBlock?.blockType || 'hero'; // Default to hero if no block selected
-      
-      const context = selectedBlock ? {
-        blocks: [{
-          blockType: selectedBlock.blockType,
-          props: selectedBlock.blockData,
-          id: selectedBlock.id
-        }]
-      } : undefined;
-      
-      console.log(`🔧 UI: Running Indy action with context (${Date.now() - startTime}ms):`, { blockType, context });
-      
-      // Call Indy with the user message and context
-      const result = await runIndyAction(userMessage, blockType, context);
-      
-      console.log(`🤖 UI: Indy result received (${Date.now() - startTime}ms):`, result);
+      // Call Indy with the user message and selected block ID
+      const result = await runIndyAction(userMessage, selectedBlock?.id);
       
       // Apply the result to the blocks store
-      if (result.success && result.action) {
-        const success = applyIndyAction(result.action, { 
-          addBlock, 
-          updateBlock: (id: string, props: any) => {
+      applyIndyAction(result);
+      
+      // Generate appropriate success message based on action type
+      switch (result.type) {
+        case 'ADD_BLOCK':
+          addMessage('assistant', `✅ Created new ${result.blockType} block!`);
+          // Auto-select the newly created block by finding its index
+          if (result.blockId) {
             const { getBlockIndex } = useBlocksStore.getState();
-            const index = getBlockIndex(id);
-            if (index !== -1) {
-              updateBlock(index, props);
-            }
-          },
-          removeBlock: (id: string) => {
-            const { getBlockIndex } = useBlocksStore.getState();
-            const index = getBlockIndex(id);
-            if (index !== -1) {
-              deleteBlock(index);
+            const newBlockIndex = getBlockIndex(result.blockId);
+            if (newBlockIndex !== -1) {
+              setSelectedIndex(newBlockIndex);
             }
           }
-        });
-        
-        if (success) {
-          // Generate appropriate success message based on action type
-          switch (result.action.type) {
-            case 'ADD_BLOCK':
-              addMessage('assistant', `✅ Created new ${result.action.blockType} block!`);
-              // Auto-select the newly created block
-              if (result.action.blockId) {
-                setSelectedBlock(result.action.blockId);
-              }
-              break;
-            case 'UPDATE_BLOCK':
-              addMessage('assistant', `✅ Updated the ${result.action.blockType} block!`);
-              break;
-            case 'REPLACE_BLOCK':
-              addMessage('assistant', `✅ Replaced content in the ${result.action.blockType} block!`);
-              break;
-            default:
-              addMessage('assistant', 'Block updated successfully!');
-          }
-        } else {
-          addMessage('assistant', 'Failed to apply changes to the block.');
-        }
-        
-        console.log(`✅ UI: Block action applied successfully (${Date.now() - startTime}ms)`);
-      } else {
-        // Add error message to chat
-        addMessage('assistant', result.error || 'Sorry, I encountered an error. Please try again.');
-        console.error(`❌ UI: Indy action failed (${Date.now() - startTime}ms):`, result.error);
+          break;
+        case 'UPDATE_BLOCK':
+          addMessage('assistant', `✅ Updated the ${result.blockType} block!`);
+          break;
+        case 'REPLACE_BLOCK':
+          addMessage('assistant', `✅ Replaced content in the ${result.blockType} block!`);
+          break;
+        default:
+          addMessage('assistant', 'Block updated successfully!');
       }
       
     } catch (error) {
@@ -128,7 +85,7 @@ export const IndyChatPanel: React.FC = () => {
       addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
     } finally {
       setIsLoading(false);
-      console.log(`🏁 UI: handleSend completed (${Date.now() - startTime}ms)`);
+
     }
   };
 
@@ -139,32 +96,27 @@ export const IndyChatPanel: React.FC = () => {
     }
   };
 
-  const isGenerating = isLoading;
-  const selectedBlock = selectedBlockId ? blocks.find(b => b.id === selectedBlockId) : null;
-
   return (
     <>
       {/* Floating Button */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={() => setIsPanelOpen(!isPanelOpen)}
-          className={`w-14 h-14 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center ${
-            isPanelOpen 
-              ? 'bg-gray-600 hover:bg-gray-700' 
-              : 'bg-blue-600 hover:bg-blue-700'
-          } text-white`}
-          aria-label="Open Indy Assistant"
-        >
-          {isPanelOpen ? (
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          ) : (
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-          )}
-        </button>
+      <button
+        onClick={() => setIsPanelOpen(!isPanelOpen)}
+        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center ${
+          isPanelOpen 
+            ? 'bg-gray-600 hover:bg-gray-700' 
+            : 'bg-blue-600 hover:bg-blue-700'
+        } text-white`}
+        aria-label="Open Indy Assistant"
+      >
+        {isPanelOpen ? (
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        ) : (
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+        )}
         
         {/* Notification Badge */}
         {!isPanelOpen && messages.length > 0 && (
@@ -172,7 +124,7 @@ export const IndyChatPanel: React.FC = () => {
             {messages.length > 9 ? '9+' : messages.length}
           </div>
         )}
-      </div>
+      </button>
 
       {/* Slide-out Panel */}
       <div className={`fixed inset-y-0 right-0 z-40 w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
@@ -215,7 +167,7 @@ export const IndyChatPanel: React.FC = () => {
                 Selected: {selectedBlock.blockType} block
               </span>
               <button
-                onClick={() => setSelectedBlock(null)}
+                onClick={() => setSelectedIndex(null)}
                 className="ml-auto p-1 hover:bg-yellow-100 rounded text-yellow-600"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -325,7 +277,7 @@ export const IndyChatPanel: React.FC = () => {
             </button>
             {blocks.length > 0 && (
               <button
-                onClick={() => setSelectedBlock(null)}
+                onClick={() => setSelectedIndex(null)}
                 className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors"
               >
                 Deselect Block

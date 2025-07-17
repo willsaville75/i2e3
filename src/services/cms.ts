@@ -1,4 +1,4 @@
-import { prisma } from '../lib/prisma';
+import { prisma } from '../utils/prisma';
 import type { Site, Entry, CanvasBlock, EntryStatus, Prisma } from '../generated/prisma';
 
 export class CMSService {

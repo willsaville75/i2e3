@@ -45,6 +45,13 @@ ${JSON.stringify(context.current, null, 2)}
 
 Update the content based on the user's intent while preserving the existing structure and any properties not mentioned in the request.
 
+BACKGROUND RULES:
+- For solid colors: { "type": "color", "color": "blue", "colorIntensity": "medium" }
+- For gradients: { "type": "gradient", "gradient": "preset_name" }
+- For images: { "type": "image", "image": { "url": "image_url", "position": "center", "size": "cover" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.4 } }
+- For videos: { "type": "video", "video": { "url": "video_url", "poster": "poster_image_url" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.3 } }
+- Available gradient presets: "sunset", "ocean", "purple", "forest", "fire", "sky", "rose", "mint"
+
 Return ONLY valid JSON with your updates. Keep the same structure and preserve any existing settings (like background, layout) unless specifically requested to change them.`;
     }
     

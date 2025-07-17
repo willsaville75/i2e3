@@ -65,13 +65,13 @@ export const Card: React.FC<CardProps> = ({
   };
 
   // Padding classes for sections when using custom padding
-  const paddingClasses = {
-    none: '',
-    sm: 'px-3 py-2 sm:px-4',
-    md: 'px-4 py-5 sm:px-6',
-    lg: 'px-6 py-6 sm:px-8',
-    xl: 'px-8 py-8 sm:px-10',
-  };
+  // const paddingClasses = {
+  //   none: '',
+  //   sm: 'px-3 py-2 sm:px-4',
+  //   md: 'px-4 py-5 sm:px-6',
+  //   lg: 'px-6 py-6 sm:px-8',
+  //   xl: 'px-8 py-8 sm:px-10',
+  // };
 
   // Determine if we're using the sectioned layout
   const hasSections = header || footer || (children && (header || footer));

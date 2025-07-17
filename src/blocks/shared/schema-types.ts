@@ -3,10 +3,7 @@
  * This is the single source of truth for all schema types
  */
 
-import { 
-  spacing, 
-  gradient
-} from './tokens'
+// Removed unused imports - spacing and gradient are used in type definitions below
 
 // Base schema property types
 export interface SchemaProperty {
@@ -84,11 +81,7 @@ export interface BackgroundSchema {
   type?: 'color' | 'gradient' | 'image' | 'video'
   color?: string
   colorIntensity?: string
-  gradient?: {
-    direction?: string
-    fromColor?: string
-    toColor?: string
-  }
+  gradient?: string
   image?: {
     url?: string
     mobileUrl?: string
@@ -184,14 +177,14 @@ export const schemaProperties = {
               top: {
                 type: 'string',
                 title: 'Top Margin',
-                enum: Object.keys(spacing),
-                default: '0'
+                enum: ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'],
+                default: 'lg'
               },
               bottom: {
                 type: 'string',
                 title: 'Bottom Margin',
-                enum: Object.keys(spacing),
-                default: '0'
+                enum: ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'],
+                default: 'lg'
               }
             }
           }
@@ -238,25 +231,25 @@ export const schemaProperties = {
               top: {
                 type: 'string',
                 title: 'Top Padding',
-                enum: Object.keys(spacing),
+                enum: ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'],
                 default: 'lg'
               },
               bottom: {
                 type: 'string',
                 title: 'Bottom Padding',
-                enum: Object.keys(spacing),
+                enum: ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'],
                 default: 'lg'
               },
               left: {
                 type: 'string',
                 title: 'Left Padding',
-                enum: Object.keys(spacing),
+                enum: ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'],
                 default: 'md'
               },
               right: {
                 type: 'string',
                 title: 'Right Padding',
-                enum: Object.keys(spacing),
+                enum: ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'],
                 default: 'md'
               }
             }
@@ -291,26 +284,10 @@ export const schemaProperties = {
         default: 'medium'
       },
       gradient: {
-        type: 'object',
-        title: 'Gradient Settings',
-        properties: {
-          direction: {
-            type: 'string',
-            title: 'Gradient Direction',
-            enum: Object.keys(gradient),
-            default: 'toRight'
-          },
-          fromColor: {
-            type: 'string',
-            title: 'From Color',
-            default: '#667eea'
-          },
-          toColor: {
-            type: 'string',
-            title: 'To Color',
-            default: '#764ba2'
-          }
-        }
+        type: 'string',
+        title: 'Gradient Preset',
+        enum: ['sunset', 'ocean', 'purple', 'forest', 'fire', 'sky', 'rose', 'mint'],
+        default: 'sunset'
       },
       image: {
         type: 'object',

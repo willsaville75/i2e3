@@ -27,15 +27,17 @@ export const HeroBlock: React.FC<HeroProps> = ({
   const contentWidth = contentSettings.contentWidth;
   const textAlignment = contentSettings.textAlignment;
   
-  // Content alignment
-  const contentAlignment = contentSettings.contentAlignment || {};
-  const horizontalAlign = contentAlignment.horizontal;
-  const verticalAlign = contentAlignment.vertical;
+  // Content alignment - available for future use
+  // const contentAlignment = contentSettings.contentAlignment || {};
+  // const horizontalAlign = contentAlignment.horizontal;
+  // const verticalAlign = contentAlignment.vertical;
   
   // Padding settings
   const contentPadding = contentSettings.padding || {};
   const topPadding = contentPadding.top;
   const bottomPadding = contentPadding.bottom;
+  const leftPadding = contentPadding.left;
+  const rightPadding = contentPadding.right;
   
   // Margin settings
   const marginTop = blockSettings.margin?.top;
@@ -184,17 +186,19 @@ export const HeroBlock: React.FC<HeroProps> = ({
       <BackgroundOverlay />
       
       {/* Content */}
-      <div className={clsx('relative z-10 w-full', containerClasses)}>
-        <div className={clsx(
-          'max-w-4xl mx-auto',
-          spacing.padding.responsive.base,
-          spacing.padding.responsive.sm,
-          spacing.padding.responsive.lg,
-          topPadding && `py-${spacing.map[topPadding as keyof typeof spacing.map]}`,
-          bottomPadding && `sm:py-${spacing.map[bottomPadding as keyof typeof spacing.map]}`,
-          textAlignment && alignment.text[textAlignment as keyof typeof alignment.text]
-        )}>
-          {/* Title */}
+      <div className={clsx(
+        'relative z-10 w-full max-w-4xl mx-auto',
+        containerClasses,
+        spacing.padding.responsive.base,
+        spacing.padding.responsive.sm,
+        spacing.padding.responsive.lg,
+        topPadding && `pt-${spacing.map[topPadding as keyof typeof spacing.map]}`,
+        bottomPadding && `pb-${spacing.map[bottomPadding as keyof typeof spacing.map]}`,
+        leftPadding && `pl-${spacing.map[leftPadding as keyof typeof spacing.map]}`,
+        rightPadding && `pr-${spacing.map[rightPadding as keyof typeof spacing.map]}`,
+        textAlignment && alignment.text[textAlignment as keyof typeof alignment.text]
+      )}>
+        {/* Title */}
           {elements.title?.content && (
             <ElementRenderer
               element={{
@@ -243,7 +247,6 @@ export const HeroBlock: React.FC<HeroProps> = ({
               }}
             />
           )}
-        </div>
       </div>
     </section>
   );

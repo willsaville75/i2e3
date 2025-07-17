@@ -5,7 +5,7 @@ export { runIndy } from './agents/runIndy';
 export { runIndyDecisionEngine } from './utils/runIndyDecisionEngine';
 export { buildOpenAIPromptForBlock } from './utils/buildOpenAIPromptForBlock';
 export { buildOpenAIPromptForPage } from './utils/buildOpenAIPromptForPage';
-export { extractTargetFromIntent, extractTargetsFromIntent } from './utils/extractTargetFromIntent';
+
 export { classifyIntent } from './utils/classifyIntent';
 
 // Agent orchestration

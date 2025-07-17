@@ -11,10 +11,12 @@ i2e/
 │   ├── api/                     # Express API server routes
 │   ├── blocks/                  # Block system - schemas, components, AI metadata
 │   ├── components/              # React UI components
+│   ├── edit-mode/               # Edit mode provider, controls, and AI chat panel
+│   ├── edit-panel/              # Properties panel and form components
 │   ├── indy/                    # AI orchestration agents and utilities
-│   ├── stores/                  # Zustand state management
-│   └── test-pages/              # Test pages for development
-├── scripts/                     # Development and utility scripts
+│   ├── store/                   # Zustand state management
+│   ├── utils/                   # Shared utility functions
+│   └── services/                # Business logic services
 ├── docs/                        # Documentation
 └── index.tsx                    # Main React entry point
 ```

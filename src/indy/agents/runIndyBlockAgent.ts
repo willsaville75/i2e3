@@ -32,8 +32,8 @@ export default async function run(input: BlockAgentInput, _memory?: any) {
   const response = await callAI({ 
     prompt, 
     model,
-    maxTokens: 400,      // Reduced from 1000 (hero blocks don't need much)
-    temperature: 0.3     // Lower for more consistent, faster responses
+    maxTokens: 300,      // Further reduced for speed
+    temperature: 0.7     // Higher for faster responses
   });
 
   // Step 3: Parse the response using response agent

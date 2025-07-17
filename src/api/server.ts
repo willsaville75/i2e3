@@ -8,7 +8,7 @@ import pageRouter from './routes/page'
 import sitesRouter from './routes/cms/sites'
 import entriesRouter from './routes/cms/entries'
 import blocksRouter from './routes/cms/blocks'
-import { prisma } from '../lib/prisma'
+import { prisma } from '../utils/prisma'
 
 // Load environment variables first
 dotenv.config()

@@ -49,11 +49,11 @@ export const Image: React.FC<ImageProps> = ({
   rounded = 'none',
   shadow = 'none',
   aspectRatio = 'auto',
-  placeholder = 'skeleton',
+  // placeholder = 'skeleton', // Available for future use
   fallbackSrc,
 }) => {
   const [isLoading, setIsLoading] = useState(true)
-  const [hasError, setHasError] = useState(false)
+  const [, setHasError] = useState(false) // hasError available for future use
   
   // Use placeholder if src is not valid
   const validSrc = getImageWithFallback(src, fallbackSrc || DEFAULT_PLACEHOLDER_IMAGE)

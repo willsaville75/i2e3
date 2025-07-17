@@ -332,14 +332,13 @@ router.post('/blocks/:id/duplicate', async (req: Request, res: Response) => {
 
 router.put('/entries/:entryId/blocks/reorder', async (req: Request, res: Response) => {
   try {
-    const { entryId } = req.params;
     const { blockIds } = req.body;
     
     if (!Array.isArray(blockIds)) {
       return res.status(400).json({ error: 'blockIds must be an array' });
     }
 
-    await CMSService.reorderCanvasBlocks(entryId, blockIds);
+    await CMSService.reorderCanvasBlocks(blockIds);
     res.status(204).send();
   } catch (error) {
     console.error('Error reordering canvas blocks:', error);

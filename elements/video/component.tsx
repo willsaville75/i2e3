@@ -91,7 +91,7 @@ export const Video: React.FC<VideoProps> = ({
     // Video load started
   }
 
-  const handleError = (e: any) => {
+  const handleError = () => {
     setIsLoading(false)
     setHasError(true)
   }

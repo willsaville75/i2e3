@@ -1,0 +1,41 @@
+{
+  "name": "i2e-ai-site-builder",
+  "version": "1.0.0",
+  "description": "AI-first site builder with blocks and Indy orchestrator",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:api": "tsx watch src/api/server.ts",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:api\"",
+    "build": "tsc && vite build",
+    "build:api": "tsc src/api/server.ts --outDir dist/api",
+    "preview": "vite preview",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "openai": "^4.67.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.6",
+    "nanoid": "^5.0.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.23",
+    "@types/node": "^20.17.9",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.6.0",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.0",
+    "postcss": "^8.5.0",
+    "tailwindcss": "^3.4.16",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vite": "^4.5.14"
+  }
+}

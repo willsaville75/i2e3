@@ -82,9 +82,11 @@ export async function runIndyAction(
 
     // Find the current block if updating
     const currentBlock = context?.blocks?.find(b => b.blockType === blockType);
+    console.log(`🔍 Frontend: Current block found:`, currentBlock ? `id=${currentBlock.id}, type=${currentBlock.blockType}` : 'none');
 
     // Call the API endpoint
     console.log(`📡 Frontend: Making HTTP request to /api/indy/generate (${Date.now() - startTime}ms)`);
+    console.log(`📤 Frontend: Sending currentData:`, currentBlock?.props ? 'YES (update mode)' : 'NO (create mode)');
     const httpStartTime = Date.now();
     const response = await fetch('/api/indy/generate', {
       method: 'POST',
@@ -124,10 +126,12 @@ export async function runIndyAction(
     
     console.log(`🔄 Frontend: Mapping API response to IndyAction (${Date.now() - startTime}ms)`);
     // Map the API response to IndyAction format
+    // Use the original currentData that was sent, not the API response
+    const isUpdate = currentBlock?.props !== undefined;
     const action: IndyAction = {
-      type: apiResponse.currentData ? 'UPDATE_BLOCK' : 'ADD_BLOCK',
+      type: isUpdate ? 'UPDATE_BLOCK' : 'ADD_BLOCK',
       data: apiResponse.blockData,
-      blockId: apiResponse.currentData ? undefined : `block-${nanoid()}`,
+      blockId: isUpdate ? currentBlock?.id : `block-${nanoid()}`,
       blockType,
       target: apiResponse.target
     };

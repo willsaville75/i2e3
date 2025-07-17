@@ -89,7 +89,10 @@ router.post('/generate', async (req: Request, res: Response) => {
     // Extract block data based on agent type
     console.log(`🔍 Extracting block data (${Date.now() - startTime}ms)`);
     let blockData;
-    if (result.blockData) {
+    if (agentName === 'runIndyContextAgent') {
+      // Context agent returns a string, not block data
+      blockData = { explanation: result };
+    } else if (result.blockData) {
       blockData = result.blockData;
     } else if (result.result) {
       blockData = result.result;

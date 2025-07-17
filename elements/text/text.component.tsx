@@ -1,20 +1,21 @@
 import React from 'react'
+import { typography, alignment, spacing } from '../../src/blocks/shared/tokens'
 
 interface TextProps {
   content: string
   tag?: 'p' | 'span' | 'div' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'blockquote' | 'code' | 'pre' | 'strong' | 'em' | 'small' | 'mark'
-  size?: 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl' | '8xl' | '9xl'
-  weight?: 'thin' | 'extralight' | 'light' | 'normal' | 'medium' | 'semibold' | 'bold' | 'extrabold' | 'black'
+  size?: keyof typeof typography.size
+  weight?: keyof typeof typography.weight
   color?: string
-  align?: 'left' | 'center' | 'right' | 'justify'
+  align?: keyof typeof alignment.text
   lineHeight?: 'none' | 'tight' | 'snug' | 'normal' | 'relaxed' | 'loose'
   letterSpacing?: 'tighter' | 'tight' | 'normal' | 'wide' | 'wider' | 'widest'
   decoration?: 'none' | 'underline' | 'overline' | 'line-through'
   transform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
   fontFamily?: 'sans' | 'serif' | 'mono'
   backgroundColor?: string
-  padding?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'
-  margin?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'
+  padding?: keyof typeof spacing.map
+  margin?: keyof typeof spacing.map
   maxWidth?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl' | 'full' | 'prose'
   truncate?: boolean
   whitespace?: 'normal' | 'nowrap' | 'pre' | 'pre-line' | 'pre-wrap'
@@ -41,44 +42,6 @@ export const Text: React.FC<TextProps> = ({
   whitespace = 'normal',
   className = '',
 }) => {
-  // Font size classes
-  const sizeClasses = {
-    xs: 'text-xs',
-    sm: 'text-sm',
-    base: 'text-base',
-    lg: 'text-lg',
-    xl: 'text-xl',
-    '2xl': 'text-2xl',
-    '3xl': 'text-3xl',
-    '4xl': 'text-4xl',
-    '5xl': 'text-5xl',
-    '6xl': 'text-6xl',
-    '7xl': 'text-7xl',
-    '8xl': 'text-8xl',
-    '9xl': 'text-9xl',
-  }
-
-  // Font weight classes
-  const weightClasses = {
-    thin: 'font-thin',
-    extralight: 'font-extralight',
-    light: 'font-light',
-    normal: 'font-normal',
-    medium: 'font-medium',
-    semibold: 'font-semibold',
-    bold: 'font-bold',
-    extrabold: 'font-extrabold',
-    black: 'font-black',
-  }
-
-  // Text alignment classes
-  const alignClasses = {
-    left: 'text-left',
-    center: 'text-center',
-    right: 'text-right',
-    justify: 'text-justify',
-  }
-
   // Line height classes
   const lineHeightClasses = {
     none: 'leading-none',
@@ -122,26 +85,26 @@ export const Text: React.FC<TextProps> = ({
     mono: 'font-mono',
   }
 
-  // Padding classes
+  // Padding classes using token system
   const paddingClasses = {
     none: '',
-    xs: 'p-1',
-    sm: 'p-2',
-    md: 'p-4',
-    lg: 'p-6',
-    xl: 'p-8',
-    '2xl': 'p-12',
+    xs: `p-${spacing.map.xs}`,
+    sm: `p-${spacing.map.sm}`,
+    md: `p-${spacing.map.md}`,
+    lg: `p-${spacing.map.lg}`,
+    xl: `p-${spacing.map.xl}`,
+    '2xl': `p-${spacing.map['2xl']}`,
   }
 
-  // Margin classes
+  // Margin classes using token system
   const marginClasses = {
     none: '',
-    xs: 'm-1',
-    sm: 'm-2',
-    md: 'm-4',
-    lg: 'm-6',
-    xl: 'm-8',
-    '2xl': 'm-12',
+    xs: `m-${spacing.map.xs}`,
+    sm: `m-${spacing.map.sm}`,
+    md: `m-${spacing.map.md}`,
+    lg: `m-${spacing.map.lg}`,
+    xl: `m-${spacing.map.xl}`,
+    '2xl': `m-${spacing.map['2xl']}`,
   }
 
   // Max width classes
@@ -171,12 +134,12 @@ export const Text: React.FC<TextProps> = ({
     'pre-wrap': 'whitespace-pre-wrap',
   }
 
-  // Build the final className
+  // Build the final className using tokens
   const finalClassName = [
-    sizeClasses[size],
-    weightClasses[weight],
+    typography.size[size],
+    typography.weight[weight],
     color,
-    alignClasses[align],
+    alignment.text[align],
     lineHeightClasses[lineHeight],
     letterSpacingClasses[letterSpacing],
     decorationClasses[decoration],
@@ -193,8 +156,6 @@ export const Text: React.FC<TextProps> = ({
     .filter(Boolean)
     .join(' ')
     .trim()
-
-
 
   const Component = tag as keyof JSX.IntrinsicElements
 

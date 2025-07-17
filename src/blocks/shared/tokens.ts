@@ -340,6 +340,15 @@ export const borders = {
   }
 } as const;
 
+export const shadows = {
+  none: 'shadow-none',
+  sm: 'shadow-sm',
+  md: 'shadow-md',
+  lg: 'shadow-lg',
+  xl: 'shadow-xl',
+  '2xl': 'shadow-2xl'
+} as const;
+
 // ============================================
 // IMAGE TOKENS
 // ============================================
@@ -557,6 +566,7 @@ export type FontWeightToken = keyof typeof typography.weight;
 export type ColorSchemeToken = keyof typeof colors.scheme;
 export type TextColorToken = keyof typeof typography.color;
 export type BorderRadiusToken = keyof typeof borders.radius;
+export type ShadowToken = keyof typeof shadows;
 export type GradientDirectionToken = keyof typeof gradient.direction;
 export type GradientPresetToken = keyof typeof gradient.presets;
 export type AlignToken = keyof typeof alignment.text;

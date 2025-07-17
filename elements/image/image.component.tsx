@@ -1,6 +1,27 @@
 import React, { useState } from 'react'
 import clsx from 'clsx'
-import { ImagePlaceholder, getImageWithFallback, isValidImageUrl, DEFAULT_PLACEHOLDER_IMAGE } from '@/utils/imagePlaceholder'
+import { image, borders, shadows } from '../../src/blocks/shared/tokens'
+
+// Simple placeholder component
+const ImagePlaceholder: React.FC<{ className?: string }> = ({ className }) => (
+  <div className={clsx('bg-gray-200 flex items-center justify-center', className)}>
+    <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M4 4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2H4zm16 2v8.59l-3.29-3.29a1 1 0 00-1.42 0L10 16.59l-2.29-2.3a1 1 0 00-1.42 0L4 17.59V6h16zM8 10a2 2 0 100-4 2 2 0 000 4z" />
+    </svg>
+  </div>
+)
+
+// Simple image validation
+const isValidImageUrl = (url: string): boolean => {
+  return Boolean(url && url.length > 0 && (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/')))
+}
+
+// Simple fallback handler
+const getImageWithFallback = (src: string, fallback?: string): string => {
+  return isValidImageUrl(src) ? src : fallback || ''
+}
+
+const DEFAULT_PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNzUgMTI1SDIyNVYxNzVIMTc1VjEyNVoiIGZpbGw9IiM5Q0E0QUYiLz4KPC9zdmc+'
 
 interface ImageProps {
   src: string
@@ -9,9 +30,9 @@ interface ImageProps {
   height?: number
   className?: string
   loading?: 'lazy' | 'eager'
-  objectFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down'
-  rounded?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
-  shadow?: 'none' | 'sm' | 'md' | 'lg' | 'xl'
+  objectFit?: keyof typeof image.size
+  rounded?: keyof typeof borders.radius
+  shadow?: keyof typeof shadows
   aspectRatio?: '1:1' | '4:3' | '16:9' | '3:2' | '2:3' | 'auto'
   placeholder?: 'blur' | 'skeleton' | 'icon'
   fallbackSrc?: string
@@ -48,31 +69,6 @@ export const Image: React.FC<ImageProps> = ({
     }
   }, [src, fallbackSrc, currentSrc])
 
-  const objectFitClasses = {
-    cover: 'object-cover',
-    contain: 'object-contain',
-    fill: 'object-fill',
-    none: 'object-none',
-    'scale-down': 'object-scale-down',
-  }
-
-  const roundedClasses = {
-    none: 'rounded-none',
-    sm: 'rounded-sm',
-    md: 'rounded-md',
-    lg: 'rounded-lg',
-    xl: 'rounded-xl',
-    full: 'rounded-full',
-  }
-
-  const shadowClasses = {
-    none: 'shadow-none',
-    sm: 'shadow-sm',
-    md: 'shadow-md',
-    lg: 'shadow-lg',
-    xl: 'shadow-xl',
-  }
-
   const aspectRatioClasses = {
     '1:1': 'aspect-square',
     '4:3': 'aspect-[4/3]',
@@ -96,8 +92,8 @@ export const Image: React.FC<ImageProps> = ({
       .join(' ')
     
     const placeholderClasses = clsx(
-      roundedClasses[rounded],
-      shadowClasses[shadow],
+      borders.radius[rounded],
+      shadows[shadow],
       filteredClassName
     )
     
@@ -119,114 +115,36 @@ export const Image: React.FC<ImageProps> = ({
     // Try fallback image if provided
     if (fallbackSrc && currentSrc !== fallbackSrc) {
       setCurrentSrc(fallbackSrc)
-      setHasError(false)
-      return
-    }
-    
-    // Use beautiful placeholder as final fallback
-    const placeholderSrc = getBeautifulPlaceholder(width, height, alt)
-    if (currentSrc !== placeholderSrc) {
-      setCurrentSrc(placeholderSrc)
+      setIsLoading(true)
       setHasError(false)
     }
-  }
-
-  const getBeautifulPlaceholder = (w?: number, h?: number, altText?: string) => {
-    const defaultWidth = w || 600
-    const defaultHeight = h || 400
-    
-    // Use a beautiful gradient placeholder with subtle patterns
-    const colors = [
-      'e0e7ff/f3f4f6', // Blue to gray
-      'fef3c7/f9fafb', // Yellow to white
-      'f3e8ff/f9fafb', // Purple to white
-      'ecfdf5/f9fafb', // Green to white
-      'fef2f2/f9fafb', // Red to white
-    ]
-    
-    const randomColor = colors[Math.floor(Math.random() * colors.length)]
-    const text = altText ? encodeURIComponent(altText.slice(0, 20)) : 'IMAGE'
-    
-    return `https://via.placeholder.com/${defaultWidth}x${defaultHeight}/${randomColor}?text=${text}`
-  }
-
-  const renderPlaceholder = () => {
-    if (placeholder === 'skeleton') {
-      return (
-        <div className={clsx(
-          'animate-pulse bg-gradient-to-r from-gray-200 to-gray-300',
-          aspectRatioClasses[aspectRatio],
-          roundedClasses[rounded],
-          'flex items-center justify-center'
-        )}>
-          <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M4 4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2H4zm16 2v8.59l-3.29-3.29a1 1 0 00-1.42 0L10 16.59l-2.29-2.3a1 1 0 00-1.42 0L4 17.59V6h16zM8 10a2 2 0 100-4 2 2 0 000 4z" />
-          </svg>
-        </div>
-      )
-    }
-    
-    if (placeholder === 'icon') {
-      return (
-        <div className={clsx(
-          'bg-gray-100 border-2 border-dashed border-gray-300',
-          aspectRatioClasses[aspectRatio],
-          roundedClasses[rounded],
-          'flex items-center justify-center text-gray-400'
-        )}>
-          <div className="text-center">
-            <svg className="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M4 4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2H4zm16 2v8.59l-3.29-3.29a1 1 0 00-1.42 0L10 16.59l-2.29-2.3a1 1 0 00-1.42 0L4 17.59V6h16zM8 10a2 2 0 100-4 2 2 0 000 4z" />
-            </svg>
-            <p className="text-sm">Image</p>
-          </div>
-        </div>
-      )
-    }
-    
-    return null
   }
 
   const imageClasses = clsx(
     'transition-opacity duration-300',
-    objectFitClasses[objectFit],
-    roundedClasses[rounded],
-    shadowClasses[shadow],
+    image.size[objectFit],
+    borders.radius[rounded],
+    shadows[shadow],
     aspectRatioClasses[aspectRatio],
-    isLoading && 'opacity-0',
-    !isLoading && 'opacity-100',
+    isLoading ? 'opacity-0' : 'opacity-100',
     className
   )
 
-  const containerClasses = clsx(
-    'relative overflow-hidden',
-    aspectRatioClasses[aspectRatio],
-    roundedClasses[rounded]
-  )
-
   return (
-    <div className={containerClasses}>
-      {/* Loading placeholder */}
-      {isLoading && renderPlaceholder()}
-      
-      {/* Error state */}
-      {hasError && !isLoading && (
+    <div className="relative">
+      {/* Show placeholder while loading */}
+      {isLoading && (
         <div className={clsx(
-          'bg-gray-100 border-2 border-dashed border-gray-300',
-          aspectRatioClasses[aspectRatio],
-          roundedClasses[rounded],
-          'flex items-center justify-center text-gray-400'
+          'absolute inset-0',
+          borders.radius[rounded],
+          shadows[shadow],
+          aspectRatioClasses[aspectRatio]
         )}>
-          <div className="text-center">
-            <svg className="w-8 h-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-            </svg>
-            <p className="text-xs">Failed to load</p>
-          </div>
+          <ImagePlaceholder />
         </div>
       )}
       
-      {/* Actual image */}
+      {/* Main image */}
       <img
         src={currentSrc}
         alt={alt}
@@ -236,7 +154,10 @@ export const Image: React.FC<ImageProps> = ({
         className={imageClasses}
         onLoad={handleLoad}
         onError={handleError}
-        style={aspectRatio === 'auto' ? { width, height } : undefined}
+        style={{
+          ...(width && { width }),
+          ...(height && { height }),
+        }}
       />
     </div>
   )

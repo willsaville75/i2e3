@@ -1,12 +1,13 @@
 import React from 'react'
+import { typography, alignment } from '../../src/blocks/shared/tokens'
 
 interface TitleProps {
   content: string
   level?: 1 | 2 | 3 | 4 | 5 | 6
-  size?: 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl' | '8xl' | '9xl'
-  weight?: 'light' | 'normal' | 'medium' | 'semibold' | 'bold' | 'extrabold'
+  size?: keyof typeof typography.size
+  weight?: keyof typeof typography.weight
   color?: string
-  align?: 'left' | 'center' | 'right' | 'justify'
+  align?: keyof typeof alignment.text
   className?: string
 }
 
@@ -27,58 +28,21 @@ export const Title: React.FC<TitleProps> = ({
       ? String((content as any).content || (content as any).title || JSON.stringify(content))
       : String(content || '')
   
-  // Font size classes
-  const sizeClasses = {
-    xs: 'text-xs',
-    sm: 'text-sm',
-    base: 'text-base',
-    lg: 'text-lg',
-    xl: 'text-xl',
-    '2xl': 'text-2xl',
-    '3xl': 'text-3xl',
-    '4xl': 'text-4xl',
-    '5xl': 'text-5xl',
-    '6xl': 'text-6xl',
-    '7xl': 'text-7xl',
-    '8xl': 'text-8xl',
-    '9xl': 'text-9xl',
-  }
-
-  // Font weight classes
-  const weightClasses = {
-    light: 'font-light',
-    normal: 'font-normal',
-    medium: 'font-medium',
-    semibold: 'font-semibold',
-    bold: 'font-bold',
-    extrabold: 'font-extrabold',
-  }
-
-  // Text alignment classes
-  const alignClasses = {
-    left: 'text-left',
-    center: 'text-center',
-    right: 'text-right',
-    justify: 'text-justify',
-  }
-  
   // Level-based fallback classes (used when size/weight not provided)
-  const levelClasses = {
-    1: 'text-4xl font-bold',
-    2: 'text-3xl font-bold',
-    3: 'text-2xl font-bold',
-    4: 'text-xl font-semibold',
-    5: 'text-lg font-semibold',
-    6: 'text-base font-semibold',
+  const levelDefaults = {
+    1: { size: '4xl' as keyof typeof typography.size, weight: 'bold' as keyof typeof typography.weight },
+    2: { size: '3xl' as keyof typeof typography.size, weight: 'bold' as keyof typeof typography.weight },
+    3: { size: '2xl' as keyof typeof typography.size, weight: 'bold' as keyof typeof typography.weight },
+    4: { size: 'xl' as keyof typeof typography.size, weight: 'semibold' as keyof typeof typography.weight },
+    5: { size: 'lg' as keyof typeof typography.size, weight: 'semibold' as keyof typeof typography.weight },
+    6: { size: 'base' as keyof typeof typography.size, weight: 'semibold' as keyof typeof typography.weight },
   }
   
-  // Use size/weight if provided, otherwise fall back to level-based styling
-  const sizeClass = size ? sizeClasses[size] : levelClasses[level].split(' ')[0]
-  const weightClass = weight ? weightClasses[weight] : levelClasses[level].split(' ')[1]
+  // Use size/weight if provided, otherwise fall back to level-based defaults
+  const finalSize = size || levelDefaults[level].size
+  const finalWeight = weight || levelDefaults[level].weight
   
-  const finalClassName = `${sizeClass} ${weightClass} ${alignClasses[align]} ${color} ${className}`.trim()
-  
-
+  const finalClassName = `${typography.size[finalSize]} ${typography.weight[finalWeight]} ${alignment.text[align]} ${color} ${className}`.trim()
   
   const Component = `h${level}` as keyof JSX.IntrinsicElements
   

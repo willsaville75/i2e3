@@ -3,11 +3,14 @@
  * 
  * This agent handles property-specific updates using the intent classification system
  * It bridges the gap between user intent and actual property changes
+ * 
+ * IMPORTANT: Uses blockStore as single source of truth
+ * Database save happens when "Done" is clicked in EditModeProvider
  */
 
 import { classifyPropertyIntent, convertIntentToPropertyUpdate, PropertyIntent } from '../utils/classifyPropertyIntent';
 import { getNestedValue, setNestedValue } from '../../blocks/shared/property-mappings';
-import { prisma } from '../../utils/prisma';
+import { useBlocksStore } from '../../store/blocksStore';
 
 export interface PropertyAgentResult {
   success: boolean;
@@ -25,6 +28,9 @@ export interface PropertyChange {
 
 /**
  * Run the property agent to handle property-specific updates
+ * 
+ * IMPORTANT: This updates the blockStore immediately
+ * Database persistence happens when "Done" is clicked
  */
 export async function runIndyPropertyAgent(
   userInput: string,
@@ -74,19 +80,19 @@ export async function runIndyPropertyAgent(
       };
     }
     
-    // Apply changes to the block
+    // Apply changes to the block data
     const updatedBlockData = applyPropertyChanges(currentBlockData, changes);
     
-    // Save changes to database
-    await prisma.canvasBlock.update({
-      where: { id: blockId },
-      data: {
-        blockData: updatedBlockData,
-        updatedAt: new Date()
-      }
-    });
+    // Update the blockStore (single source of truth)
+    const { updateBlock, getBlockIndex } = useBlocksStore.getState();
+    const blockIndex = getBlockIndex(blockId);
     
-    console.log('✅ Property Agent: Successfully updated block in database');
+    if (blockIndex !== -1) {
+      updateBlock(blockIndex, updatedBlockData);
+      console.log('✅ Property Agent: Successfully updated block in store');
+    } else {
+      throw new Error(`Block with id ${blockId} not found in store`);
+    }
     
     // Generate success message
     const message = generateSuccessMessage(changes, primaryIntent);

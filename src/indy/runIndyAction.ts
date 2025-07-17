@@ -2,7 +2,6 @@ import { DesignTokens } from '../blocks/shared/token-types';
 import { nanoid } from 'nanoid';
 import { useBlocksStore, type BlockInstance } from '../store/blocksStore';
 import { isPropertyIntent, runIndyPropertyAgent } from './agents/runIndyPropertyAgent';
-import { prisma } from '../utils/prisma';
 
 /**
  * Block data structure for existing blocks
@@ -53,30 +52,10 @@ export interface IndyActionResult {
 }
 
 /**
- * Fetch block data from database if not in store
- */
-async function fetchBlockFromDatabase(blockId: string): Promise<{ blockType: string; blockData: any } | null> {
-  try {
-    const block = await prisma.canvasBlock.findUnique({
-      where: { id: blockId }
-    });
-    
-    if (!block) {
-      return null;
-    }
-    
-    return {
-      blockType: block.blockType,
-      blockData: block.blockData
-    };
-  } catch (error) {
-    console.error('Error fetching block from database:', error);
-    return null;
-  }
-}
-
-/**
  * Main function to run an Indy action
+ * 
+ * IMPORTANT: blockStore is the single source of truth
+ * Never fetch from database - always use the store
  */
 export async function runIndyAction(
   userInput: string,
@@ -85,44 +64,29 @@ export async function runIndyAction(
   try {
     const { blocks } = useBlocksStore.getState();
     
-    // Determine block type and current data
+    // Find block in store (blockStore is single source of truth)
     let blockType: string;
     let currentBlock: BlockInstance | undefined;
-    let currentBlockData: any;
     
     if (blockId) {
-      // First try to find in store
       currentBlock = blocks.find((b: BlockInstance) => b.id === blockId);
-      
       if (!currentBlock) {
-        // If not in store, try to fetch from database
-        console.log('🔍 Block not found in store, fetching from database...');
-        const dbBlock = await fetchBlockFromDatabase(blockId);
-        
-        if (!dbBlock) {
-          throw new Error(`Block with id ${blockId} not found in store or database`);
-        }
-        
-        blockType = dbBlock.blockType;
-        currentBlockData = dbBlock.blockData;
-      } else {
-        blockType = currentBlock.blockType;
-        currentBlockData = currentBlock.blockData;
+        throw new Error(`Block with id ${blockId} not found in store`);
       }
+      blockType = currentBlock.blockType;
     } else {
       // Default to hero block if no specific block
       blockType = 'hero';
-      currentBlockData = null;
     }
     
     // Check if this is a property-related intent
-    if (isPropertyIntent(userInput) && currentBlockData) {
+    if (isPropertyIntent(userInput) && currentBlock) {
       console.log('🔧 Detected property intent, using property agent');
       
       const propertyResult = await runIndyPropertyAgent(
         userInput,
         blockId!,
-        currentBlockData
+        currentBlock.blockData
       );
       
       if (propertyResult.success) {
@@ -145,7 +109,7 @@ export async function runIndyAction(
     const requestData = {
       userInput,
       blockType,
-      currentData: currentBlockData,
+      currentData: currentBlock?.blockData,
       tokens: {
         colors: ['blue', 'red', 'green', 'yellow', 'purple', 'pink', 'gray', 'black', 'white'],
         spacing: ['sm', 'md', 'lg', 'xl', '2xl']
@@ -188,6 +152,9 @@ export async function runIndyAction(
 
 /**
  * Apply an Indy action to update the blocks store
+ * 
+ * IMPORTANT: This updates the store immediately
+ * Database save happens when "Done" is clicked
  */
 export function applyIndyAction(action: IndyAction): void {
   const { addBlock, updateBlock, getBlockIndex } = useBlocksStore.getState();

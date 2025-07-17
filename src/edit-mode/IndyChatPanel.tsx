@@ -1,299 +1,267 @@
-import { useState } from 'react';
-import { runIndyAction, applyIndyAction } from '../indy';
+import React, { useState, useRef, useEffect } from 'react';
 import { useBlocksStore } from '../store/blocksStore';
-import { useIndyChatStore } from '../store/indyChatStore';
 
 /**
- * IndyChatPanel - A floating chat assistant for interacting with Indy agents
+ * Indy Chat Panel Component
  * 
+ * Provides a chat interface for users to interact with Indy AI assistant
  * Features:
- * - Floating button that opens panel from the right
- * - Visible on every page in view mode
- * - Input field bound to store state
- * - Message history display
- * - Integration with runIndyAction() function
- * - Block selection and update support using shared blockStore
+ * - Real-time chat messaging with Indy
+ * - Block context awareness
+ * - API-based integration with property agent system
+ * - Auto-scrolling chat history
+ * - Loading states and error handling
  */
+
+interface ChatMessage {
+  id: string;
+  type: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  metadata?: {
+    action?: any;
+    confidence?: number;
+  };
+}
+
 export const IndyChatPanel: React.FC = () => {
-  const {
-    messages,
-    input,
-    addMessage,
-    setInput,
-    clearMessages
-  } = useIndyChatStore();
-
-  // Blocks store for managing blocks on the page (shared with canvas renderer)
-    const {
-    blocks,
-    selectedIndex,
-    setSelectedIndex
-  } = useBlocksStore();
-
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: '1',
+      type: 'assistant',
+      content: 'Hi! I\'m Indy, your AI assistant. I can help you update content, adjust layouts, change colors, and more. Just tell me what you\'d like to do!',
+      timestamp: new Date()
+    }
+  ]);
+  const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
-
-  // Get selected block from index
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { selectedIndex, blocks } = useBlocksStore();
+  
   const selectedBlock = selectedIndex !== null ? blocks[selectedIndex] : null;
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
-    const userMessage = input.trim();
-    const startTime = Date.now();
-    // Add user message to chat
-    addMessage('user', userMessage);
-    
-    // Clear input
-    setInput('');
-    
-    // Set loading state
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isLoading) return;
+
+    const userMessage = inputValue.trim();
+    setInputValue('');
     setIsLoading(true);
-    
+
+    // Add user message
+    const userMessageObj: ChatMessage = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: userMessage,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, userMessageObj]);
+
     try {
-      // Call Indy with the user message and selected block ID
-      const result = await runIndyAction(userMessage, selectedBlock?.id);
-      
-      // Apply the result to the blocks store
-      applyIndyAction(result);
-      
-      // Generate appropriate success message based on action type
-      switch (result.type) {
-        case 'ADD_BLOCK':
-          addMessage('assistant', `✅ Created new ${result.blockType} block!`);
-          // Auto-select the newly created block by finding its index
-          if (result.blockId) {
-            const { getBlockIndex } = useBlocksStore.getState();
-            const newBlockIndex = getBlockIndex(result.blockId);
-            if (newBlockIndex !== -1) {
-              setSelectedIndex(newBlockIndex);
-            }
-          }
-          break;
-        case 'UPDATE_BLOCK':
-          addMessage('assistant', `✅ Updated the ${result.blockType} block!`);
-          break;
-        case 'REPLACE_BLOCK':
-          addMessage('assistant', `✅ Replaced content in the ${result.blockType} block!`);
-          break;
-        default:
-          addMessage('assistant', 'Block updated successfully!');
+      // Call the API instead of running the action directly
+      const response = await fetch('/api/indy/action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userInput: userMessage,
+          blockId: selectedBlock?.id
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to process request');
       }
+
+      const result = await response.json();
       
+      let assistantMessage: string;
+      let confidence: number = 0;
+
+      if (result.success) {
+        const action = result.action;
+        
+        if (action.type === 'PROPERTY_UPDATE') {
+          // Handle property updates
+          const changes = action.propertyChanges || [];
+          if (changes.length === 1) {
+            const change = changes[0];
+            assistantMessage = `✅ Updated ${getPropertyDisplayName(change.property)} to "${change.newValue}"`;
+            confidence = change.intent?.confidence || 0.9;
+          } else {
+            assistantMessage = `✅ Updated ${changes.length} properties successfully`;
+            confidence = 0.9;
+          }
+          
+          // Refresh the page to show changes (since we're not using the store directly)
+          window.location.reload();
+        } else {
+          // Handle content updates
+          assistantMessage = '✅ Content updated successfully!';
+          confidence = 0.8;
+        }
+      } else {
+        assistantMessage = '❌ Sorry, I couldn\'t complete that request. Please try rephrasing or be more specific.';
+      }
+
+      // Add assistant response
+      const assistantMessageObj: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: assistantMessage,
+        timestamp: new Date(),
+        metadata: {
+          action: result.action,
+          confidence
+        }
+      };
+      setMessages(prev => [...prev, assistantMessageObj]);
+
     } catch (error) {
-      console.error(`💥 UI: Error in handleSend (${Date.now() - startTime}ms):`, error);
-      addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+      console.error('Error sending message:', error);
+      
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
-
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSendMessage();
     }
   };
 
   return (
-    <>
-      {/* Floating Button */}
-      <button
-        onClick={() => setIsPanelOpen(!isPanelOpen)}
-        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center ${
-          isPanelOpen 
-            ? 'bg-gray-600 hover:bg-gray-700' 
-            : 'bg-blue-600 hover:bg-blue-700'
-        } text-white`}
-        aria-label="Open Indy Assistant"
-      >
-        {isPanelOpen ? (
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        ) : (
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-        )}
-        
-        {/* Notification Badge */}
-        {!isPanelOpen && messages.length > 0 && (
-          <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-            {messages.length > 9 ? '9+' : messages.length}
+    <div className="h-full flex flex-col bg-white">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+            <span className="text-white font-semibold text-sm">I</span>
           </div>
-        )}
-      </button>
-
-      {/* Slide-out Panel */}
-      <div className={`fixed inset-y-0 right-0 z-40 w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
-        isPanelOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
-        
-        {/* Panel Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-blue-50">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Indy Assistant</h3>
-              <p className="text-xs text-gray-600">
-                {selectedBlock ? `Editing ${selectedBlock.blockType} block` : 'Create & edit blocks'}
-              </p>
-            </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Indy AI</h3>
+            <p className="text-sm text-gray-600">Your intelligent design assistant</p>
           </div>
-          <button
-            onClick={() => setIsPanelOpen(false)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
         </div>
-
-        {/* Block Context Info */}
+        
         {selectedBlock && (
-          <div className="p-3 bg-yellow-50 border-b border-yellow-200">
-            <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-sm font-medium text-yellow-800">
-                Selected: {selectedBlock.blockType} block
-              </span>
-              <button
-                onClick={() => setSelectedIndex(null)}
-                className="ml-auto p-1 hover:bg-yellow-100 rounded text-yellow-600"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <p className="text-xs text-yellow-700 mt-1">
-              Describe changes to update this block
+          <div className="mt-3 px-3 py-2 bg-white rounded-md border border-blue-200">
+            <p className="text-xs text-blue-700">
+              <span className="font-medium">Editing:</span> {selectedBlock.blockType} block
             </p>
           </div>
         )}
-
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-96">
-          {messages.length === 0 ? (
-            <div className="text-center py-8">
-              <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              <p className="text-gray-600 text-sm">
-                Hi! I'm Indy, your AI assistant.
-              </p>
-              <p className="text-gray-500 text-xs mt-2">
-                {selectedBlock 
-                  ? "Tell me how to update the selected block"
-                  : "Tell me what kind of block you'd like to create"}
-              </p>
-            </div>
-          ) : (
-            messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex ${
-                  message.role === 'user' ? 'justify-end' : 'justify-start'
-                }`}
-              >
-                <div
-                  className={`max-w-xs px-4 py-2 rounded-lg ${
-                    message.role === 'user'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-800'
-                  }`}
-                >
-                  <div className="text-xs font-semibold mb-1 opacity-75">
-                    {message.role === 'user' ? 'You' : 'Indy'}
-                  </div>
-                  <div className="text-sm whitespace-pre-wrap break-words">
-                    {message.content}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg">
-                <div className="text-xs font-semibold mb-1 opacity-75">Indy</div>
-                <div className="text-sm">
-                  <span className="inline-flex items-center">
-                    Thinking
-                    <span className="ml-1 animate-pulse">...</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Input Area */}
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex gap-2">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              rows={2}
-              disabled={isLoading}
-              placeholder={selectedBlock ? "Describe changes..." : "Describe what you want to create..."}
-            />
-            <button
-              onClick={handleSend}
-              disabled={isLoading || !input.trim()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isLoading ? (
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
-              )}
-            </button>
-          </div>
-          
-          {/* Quick Actions */}
-          <div className="flex gap-2 mt-3">
-            <button
-              onClick={() => clearMessages()}
-              className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors"
-            >
-              Clear Chat
-            </button>
-            {blocks.length > 0 && (
-              <button
-                onClick={() => setSelectedIndex(null)}
-                className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors"
-              >
-                Deselect Block
-              </button>
-            )}
-          </div>
-        </div>
       </div>
 
-      {/* Backdrop */}
-      {isPanelOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-25 z-30"
-          onClick={() => setIsPanelOpen(false)}
-        />
-      )}
-    </>
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            <div
+              className={`max-w-[80%] px-4 py-2 rounded-lg ${
+                message.type === 'user'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 text-gray-900'
+              }`}
+            >
+              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              <p className={`text-xs mt-1 ${
+                message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
+              }`}>
+                {message.timestamp.toLocaleTimeString()}
+                {message.metadata?.confidence && (
+                  <span className="ml-2">
+                    ({Math.round(message.metadata.confidence * 100)}% confidence)
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+        ))}
+        
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                <p className="text-sm">Indy is thinking...</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input */}
+      <div className="p-4 border-t border-gray-200">
+        <div className="flex space-x-3">
+          <textarea
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Ask Indy to make changes... (e.g., 'make this full width', 'change the title to...', 'add more padding')"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            rows={2}
+            disabled={isLoading}
+          />
+          <button
+            onClick={handleSendMessage}
+            disabled={!inputValue.trim() || isLoading}
+            className={`px-4 py-2 rounded-md font-medium transition-colors ${
+              !inputValue.trim() || isLoading
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-500 text-white hover:bg-blue-600'
+            }`}
+          >
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
+
+/**
+ * Get display name for property
+ */
+function getPropertyDisplayName(property: string): string {
+  const parts = property.split('.');
+  const lastPart = parts[parts.length - 1];
+  
+  const displayNames: Record<string, string> = {
+    'blockWidth': 'block width',
+    'height': 'block height',
+    'contentWidth': 'content width',
+    'textAlignment': 'text alignment',
+    'top': 'top spacing',
+    'bottom': 'bottom spacing',
+    'left': 'left spacing',
+    'right': 'right spacing',
+    'color': 'background color',
+    'gradient': 'background gradient'
+  };
+  
+  return displayNames[lastPart] || lastPart;
+}

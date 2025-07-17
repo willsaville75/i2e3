@@ -36,6 +36,19 @@ export function buildOpenAIPromptForBlock(input: PromptInput): string {
 
   // For hero blocks, use specific structure template
   if (blockType === 'hero') {
+    // For update mode with current data, use the current data as base
+    if (mode === 'update' && context.current) {
+      return `${base}${goal}
+
+Current Data:
+${JSON.stringify(context.current, null, 2)}
+
+Update the content based on the user's intent while preserving the existing structure and any properties not mentioned in the request.
+
+Return ONLY valid JSON with your updates. Keep the same structure and preserve any existing settings (like background, layout) unless specifically requested to change them.`;
+    }
+    
+    // For create mode or when no current data, use template
     return `${base}${goal}
 
 Return ONLY valid JSON in this EXACT format:

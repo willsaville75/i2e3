@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Site model - represents a website/project
+model Site {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  domain      String?  @unique
+  settings    Json?    // Site-wide settings (theme, config, etc.)
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  entries     Entry[]
+  
+  @@map("sites")
+}
+
+// Entry model - represents a page/content entry
+model Entry {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   // URL-friendly identifier
+  description String?
+  status      EntryStatus @default(DRAFT)
+  metadata    Json?    // SEO, social media, custom fields
+  
+  // Foreign keys
+  siteId      String
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  publishedAt DateTime?
+  
+  // Relations
+  site        Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  blocks      CanvasBlock[]
+  
+  // Ensure unique slug per site
+  @@unique([siteId, slug])
+  @@map("entries")
+}
+
+// CanvasBlock model - represents individual blocks within an entry
+model CanvasBlock {
+  id          String   @id @default(cuid())
+  blockType   String   // e.g., "hero", "text", "image", "video"
+  blockData   Json     // Block-specific data/props
+  position    Int      // Order/position within the entry
+  
+  // Optional styling/layout overrides
+  styles      Json?    // Custom CSS classes, spacing, etc.
+  
+  // Foreign keys
+  entryId     String
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  entry       Entry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  
+  // Ensure unique position per entry
+  @@unique([entryId, position])
+  @@map("canvas_blocks")
+}
+
+// Media model - for file uploads and media management
+model Media {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int      // File size in bytes
+  url         String   // Storage URL (local/cloud)
+  alt         String?  // Alt text for accessibility
+  
+  // Optional metadata
+  width       Int?     // For images
+  height      Int?     // For images
+  duration    Int?     // For videos (in seconds)
+  
+  // Organization
+  folder      String?  // Virtual folder path
+  tags        String[] // Searchable tags
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("media")
+}
+
+// Enums
+enum EntryStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}

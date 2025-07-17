@@ -28,13 +28,51 @@ export function classifyIntentToAgent(input: string): string {
   const lower = input.toLowerCase();
   let agentName: string;
   
-  if (lower.includes('explain') || lower.includes('describe') || lower.includes('what is') || lower.includes('tell me about')) agentName = 'runIndyContextAgent';
-  else if (lower.includes('create') || lower.includes('new')) agentName = 'createAgent';
-  else if (lower.includes('update') || lower.includes('change')) agentName = 'updateAgent';
-  else if (lower.includes('page')) agentName = 'runIndyPageAgent';
-  else if (lower.includes('block')) agentName = 'runIndyBlockAgent';
-  else if (lower.includes('flow') || lower.includes('execute')) agentName = 'runIndyExecutionAgent';
-  else agentName = 'createAgent'; // Default to createAgent for new blocks instead of runIndyPromptAgent
+  // Check for explanation/context requests first
+  if (lower.includes('explain') || lower.includes('describe') || lower.includes('what is') || lower.includes('tell me about')) {
+    agentName = 'runIndyContextAgent';
+  }
+  // Check for explicit create/new requests
+  else if (lower.includes('create') || lower.includes('new')) {
+    agentName = 'createAgent';
+  }
+  // Check for page-level requests
+  else if (lower.includes('page')) {
+    agentName = 'runIndyPageAgent';
+  }
+  // Check for execution/flow requests
+  else if (lower.includes('flow') || lower.includes('execute')) {
+    agentName = 'runIndyExecutionAgent';
+  }
+  // Check for complex multi-part requests or content changes
+  else if (
+    // Multiple targets (contains "and")
+    lower.includes(' and ') ||
+    // Content transformation requests
+    lower.includes('make it about') ||
+    lower.includes('change it to') ||
+    lower.includes('transform') ||
+    lower.includes('convert') ||
+    // Complex update patterns
+    (lower.includes('update') && (lower.includes('also') || lower.includes('plus'))) ||
+    // Content-focused requests without specific targets
+    (!lower.includes('background') && !lower.includes('button') && !lower.includes('title') && !lower.includes('subtitle') && 
+     (lower.includes('about') || lower.includes('topic') || lower.includes('content') || lower.includes('theme')))
+  ) {
+    agentName = 'runIndyBlockAgent'; // Use block agent for complex requests
+  }
+  // Simple update requests with specific targets
+  else if (lower.includes('update') || lower.includes('change')) {
+    agentName = 'updateAgent';
+  }
+  // Block-specific requests
+  else if (lower.includes('block')) {
+    agentName = 'runIndyBlockAgent';
+  }
+  // Default to updateAgent for existing blocks, createAgent for new ones
+  else {
+    agentName = 'updateAgent';
+  }
   
   console.log(`🎯 Intent classified as: ${agentName} (${Date.now() - startTime}ms)`);
   return agentName;

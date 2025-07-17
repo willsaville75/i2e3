@@ -62,13 +62,9 @@ BACKGROUND RULES:
 - Available gradient presets: "sunset", "ocean", "purple", "forest", "fire", "sky", "rose", "mint"
 - Image positions: "center", "top", "bottom", "left", "right"
 - Image sizes: "cover", "contain", "auto"
-- IMPORTANT: Match the background type to user intent - if they mention "image", "photo", "picture" use type "image"
-- IMPORTANT: If they mention "video", "clip", "footage" use type "video"  
+- Match the background type to user intent - if they mention "image", "photo", "picture" use type "image"
+- If they mention "video", "clip", "footage" use type "video"
 - If user mentions specific gradient colors, use the closest preset name
-- Examples: 
-  - "sunset gradient" → { "type": "gradient", "gradient": "sunset" }
-  - "hero with mountain image" → { "type": "image", "image": { "url": "mountain_image_url", "position": "center", "size": "cover" } }
-  - "video background" → { "type": "video", "video": { "url": "video_url", "poster": "poster_url" } }
 
 Make the content engaging and relevant to: "${userMessage}". No explanations, just JSON.`;
 

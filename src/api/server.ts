@@ -1,8 +1,14 @@
 import dotenv from 'dotenv'
-import express, { type Request, type Response } from 'express'
+import express, { type Request, type Response, type NextFunction } from 'express'
 import cors from 'cors'
 import pagesRouter from './routes/pages'
 import indyRouter from './routes/indy'
+import cmsRouter from './routes/cms'
+import pageRouter from './routes/page'
+import sitesRouter from './routes/cms/sites'
+import entriesRouter from './routes/cms/entries'
+import blocksRouter from './routes/cms/blocks'
+import { prisma } from '../lib/prisma'
 
 // Load environment variables first
 dotenv.config()
@@ -16,7 +22,6 @@ if (!process.env.OPENAI_API_KEY) {
 }
 
 const app = express()
-const PORT = process.env.PORT || 3002
 
 // OPTIMIZATION: Configure Express for better connection handling
 app.set('trust proxy', 1)
@@ -51,38 +56,48 @@ app.use((_req, res, next) => {
 // Routes
 app.use('/api/pages', pagesRouter)
 app.use('/api/indy', indyRouter)
+app.use('/api/cms', cmsRouter)
+app.use('/api/page', pageRouter)
+app.use('/api/sites', sitesRouter)
+app.use('/api/entries', entriesRouter)
+app.use('/api/blocks', blocksRouter)
 
 // Health check
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-// OPTIMIZATION: Configure server with better connection settings
-const server = app.listen(PORT, () => {
+// Error handling middleware
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('Unhandled error:', err)
+  res.status(500).json({
+    error: 'Internal server error',
+    details: err.message
+  })
+})
+
+// 404 handler
+app.use((_req: Request, res: Response) => {
+  res.status(404).json({ error: 'Not found' })
+})
+
+// Start server
+const PORT = process.env.PORT || 3002
+app.listen(PORT, () => {
   console.log(`I2E API server running on port ${PORT}`)
 })
 
-// OPTIMIZATION: Configure server timeouts and connection limits
-server.keepAliveTimeout = 5000 // 5 seconds
-server.headersTimeout = 6000   // 6 seconds (slightly higher than keepAliveTimeout)
-server.timeout = 30000         // 30 seconds for long AI requests
-server.maxConnections = 1000   // Increase max connections
-
-// OPTIMIZATION: Handle server shutdown gracefully
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully')
-  server.close(() => {
-    console.log('Server closed')
-    process.exit(0)
-  })
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully...')
+  await prisma.$disconnect()
+  process.exit(0)
 })
 
-process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully')
-  server.close(() => {
-    console.log('Server closed')
-    process.exit(0)
-  })
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, shutting down gracefully...')
+  await prisma.$disconnect()
+  process.exit(0)
 })
 
-export default server 
+export default app 

@@ -89,16 +89,11 @@ When changing background types, return the COMPLETE new background object:
 - For videos: { "type": "video", "video": { "url": "video_url", "poster": "poster_image_url" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.3 } }
 - Available gradient presets: "sunset", "ocean", "purple", "forest", "fire", "sky", "rose", "mint"
 - CRITICAL: When user wants to change background type (color→image, gradient→video, etc), return the ENTIRE new background object
-- Examples: 
-  - "sunset gradient" → { "type": "gradient", "gradient": "sunset", "colorIntensity": "medium" }
-  - "change to mountain image" → { "type": "image", "image": { "url": "https://example.com/mountain.jpg", "position": "center", "size": "cover" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.4 } }
-  - "add video background" → { "type": "video", "video": { "url": "https://example.com/video.mp4", "poster": "https://example.com/poster.jpg" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.3 } }
 
 Important:
 - Return ONLY the direct value that should replace the current value at "${target}"
 - Do NOT wrap it in the path structure
-- Do NOT include parent objects
-- Do NOT include explanations`;
+- Do NOT include parent objects`;
       
     } else {
       // Full block update - use the standard prompt builder

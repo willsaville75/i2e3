@@ -11,30 +11,16 @@ export const heroAIMetadata = {
   contentHints: {
     headline: {
       characteristics: ['Clear', 'Benefit-focused', 'Emotional', 'Concise'],
-      examples: [
-        'Transform Your Workflow in Minutes',
-        'The Future of [Industry] is Here',
-        'Unlock Your Team\'s Potential'
-      ],
       lengthGuideline: '3-8 words for maximum impact'
     },
     
     subheadline: {
       characteristics: ['Explanatory', 'Supportive', 'Detailed', 'Persuasive'],
-      examples: [
-        'Join thousands of satisfied customers who have revolutionized their business',
-        'Discover the features that will transform your daily operations'
-      ],
       lengthGuideline: '10-20 words to provide context without overwhelming'
     },
     
     ctaButton: {
       characteristics: ['Action-oriented', 'Urgent', 'Clear', 'Benefit-focused'],
-      examples: [
-        'Start Free Trial',
-        'Get Started Today',
-        'Download Now'
-      ],
       lengthGuideline: '1-3 words for buttons'
     }
   },
@@ -53,6 +39,6 @@ export const heroAIMetadata = {
       }
     }
   }
-}
+};
 
 export type HeroAIMetadata = typeof heroAIMetadata 

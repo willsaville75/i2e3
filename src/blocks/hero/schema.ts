@@ -94,15 +94,15 @@ export const heroSchema = createBlockSchema({
 export const heroDefaultData: HeroProps = {
   elements: {
     title: {
-      content: "Welcome to Our Platform",
+      content: "",
       level: 1
     },
     subtitle: {
-      content: "Build something amazing today"
+      content: ""
     },
     button: {
-      text: "Get Started",
-      href: "/get-started",
+      text: "",
+      href: "#",
       variant: "primary",
       size: "lg"
     }

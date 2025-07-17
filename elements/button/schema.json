@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "string",
+      "title": "Button Text",
+      "description": "The label shown on the button. Keep it short and action-oriented (e.g., 'Get Started', 'Learn More')."
+    },
+    "href": {
+      "type": "string",
+      "title": "Link URL",
+      "description": "Where the button navigates to. Use # for same-page anchors, relative paths for internal links, or full URLs for external sites."
+    },
+    "variant": {
+      "type": "string",
+      "title": "Variant",
+      "description": "Button appearance style. 'Primary' for main actions, 'Secondary' for alternatives, 'Outline' for subtle emphasis, 'Ghost' for minimal styling.",
+      "enum": ["primary", "secondary", "outline", "ghost"],
+      "default": "primary"
+    },
+    "size": {
+      "type": "string",
+      "title": "Size",
+      "description": "Button size. 'Small' for tight spaces, 'Medium' for standard use, 'Large' for prominent CTAs.",
+      "enum": ["sm", "md", "lg"],
+      "default": "md"
+    },
+    "disabled": {
+      "type": "boolean",
+      "title": "Disabled",
+      "description": "Prevents clicking and shows disabled state. Use for unavailable actions or during loading states.",
+      "default": false
+    },
+    "backgroundColor": {
+      "type": "string",
+      "title": "Background Color",
+      "description": "Override background color. Usually inherits from variant, but can be customized for special cases.",
+      "enum": [
+        "bg-transparent",
+        "bg-white",
+        "bg-gray-50",
+        "bg-gray-100",
+        "bg-blue-50",
+        "bg-blue-100",
+        "bg-green-50",
+        "bg-green-100",
+        "bg-yellow-50",
+        "bg-yellow-100",
+        "bg-red-50",
+        "bg-red-100",
+        "bg-purple-50",
+        "bg-purple-100"
+      ],
+      "default": "bg-transparent"
+    }
+  },
+  "required": ["text"],
+  "additionalProperties": false
+} 

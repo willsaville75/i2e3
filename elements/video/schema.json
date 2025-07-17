@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "src": {
+      "type": "string",
+      "description": "Video source URL"
+    },
+    "poster": {
+      "type": "string",
+      "description": "Poster image URL to show before video loads"
+    },
+    "width": {
+      "type": "number",
+      "description": "Video width in pixels"
+    },
+    "height": {
+      "type": "number",
+      "description": "Video height in pixels"
+    },
+    "className": {
+      "type": "string",
+      "description": "Additional CSS classes"
+    },
+    "controls": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to show video controls"
+    },
+    "autoplay": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to autoplay the video"
+    },
+    "loop": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to loop the video"
+    },
+    "muted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to mute the video"
+    },
+    "preload": {
+      "type": "string",
+      "enum": ["none", "metadata", "auto"],
+      "default": "metadata",
+      "description": "How much of the video to preload"
+    },
+    "aspectRatio": {
+      "type": "string",
+      "enum": ["1:1", "4:3", "16:9", "3:2", "2:3", "auto"],
+      "default": "16:9",
+      "description": "Aspect ratio constraint"
+    },
+    "rounded": {
+      "type": "string",
+      "enum": ["none", "sm", "md", "lg", "xl"],
+      "default": "lg",
+      "description": "Border radius"
+    },
+    "shadow": {
+      "type": "string",
+      "enum": ["none", "sm", "md", "lg", "xl"],
+      "default": "md",
+      "description": "Shadow effect"
+    },
+    "placeholder": {
+      "type": "string",
+      "enum": ["skeleton", "icon"],
+      "default": "skeleton",
+      "description": "Placeholder type while loading"
+    },
+    "fallbackMessage": {
+      "type": "string",
+      "default": "Your browser does not support the video tag.",
+      "description": "Message to show if video fails to load"
+    }
+  },
+  "required": ["src"]
+} 

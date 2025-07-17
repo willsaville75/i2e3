@@ -12,64 +12,7 @@ import {
   gradient,
   createGradientStyle
 } from '../shared/tokens';
-
-interface ElementRendererProps {
-  element: any;
-}
-
-// Element renderer for hero block content
-// Handles text elements, buttons, and responsive behavior
-const ElementRenderer: React.FC<ElementRendererProps> = ({ element }) => {
-  if (!element || typeof element !== 'object') {
-    return null;
-  }
-  
-  const { props } = element;
-  
-  if (element.type === 'title') {
-    const level = props.level || 1;
-    const HeadingTag = level === 1 ? 'h1' : 
-                     level === 2 ? 'h2' : 
-                     level === 3 ? 'h3' : 
-                     level === 4 ? 'h4' : 
-                     level === 5 ? 'h5' : 'h6';
-    
-    return React.createElement(HeadingTag, {
-      className: clsx(props.className, props.color, props.size, props.weight)
-    }, props.content);
-  }
-  
-  if (element.type === 'text') {
-    return (
-      <p className={clsx(props.className, props.color, props.size, props.weight)}>
-        {props.content}
-      </p>
-    );
-  }
-  
-  if (element.type === 'button') {
-    return (
-      <a 
-        href={props.href}
-        className={clsx(
-          'inline-flex items-center justify-center rounded-md font-medium transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-          props.variant === 'primary' && 'bg-blue-600 text-white hover:bg-blue-700',
-          props.variant === 'secondary' && 'bg-gray-600 text-white hover:bg-gray-700',
-          props.variant === 'outline' && 'border border-gray-300 bg-transparent hover:bg-gray-50',
-          props.size === 'sm' && 'px-3 py-2 text-sm',
-          props.size === 'md' && 'px-4 py-2 text-base',
-          props.size === 'lg' && 'px-6 py-3 text-lg',
-          props.className
-        )}
-      >
-        {props.text}
-      </a>
-    );
-  }
-  
-  return <div>{props.content || props.text}</div>;
-};
+import { ElementRenderer } from '../../components/ElementRenderer';
 
 export const HeroBlock: React.FC<HeroProps> = ({
   elements = {},
@@ -295,7 +238,6 @@ export const HeroBlock: React.FC<HeroProps> = ({
           {elements.title?.content && (
             <ElementRenderer
               element={{
-                id: 'hero-title',
                 type: 'title',
                 props: {
                   content: elements.title.content,
@@ -313,7 +255,6 @@ export const HeroBlock: React.FC<HeroProps> = ({
           {elements.subtitle?.content && (
             <ElementRenderer
               element={{
-                id: 'hero-subtitle',
                 type: 'text',
                 props: {
                   content: elements.subtitle.content,
@@ -330,7 +271,6 @@ export const HeroBlock: React.FC<HeroProps> = ({
           {elements.button?.text && elements.button?.href && (
             <ElementRenderer
               element={{
-                id: 'hero-button',
                 type: 'button',
                 props: {
                   text: elements.button.text,

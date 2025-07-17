@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the select"
+    },
+    "value": {
+      "type": "string",
+      "description": "Controlled value"
+    },
+    "defaultValue": {
+      "type": "string",
+      "description": "Default selected value"
+    },
+    "placeholder": {
+      "type": "string",
+      "description": "Placeholder text"
+    },
+    "options": {
+      "type": "array",
+      "description": "Select options",
+      "items": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "Option value"
+          },
+          "label": {
+            "type": "string",
+            "description": "Option label"
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "Whether option is disabled"
+          }
+        },
+        "required": ["value", "label"]
+      }
+    },
+    "disabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the select is disabled"
+    },
+    "required": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the select is required"
+    },
+    "label": {
+      "type": "string",
+      "description": "Label text"
+    },
+    "helperText": {
+      "type": "string",
+      "description": "Helper text below the select"
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message"
+    },
+    "size": {
+      "type": "string",
+      "enum": ["sm", "md", "lg"],
+      "default": "md",
+      "description": "Select size"
+    },
+    "variant": {
+      "type": "string",
+      "enum": ["default", "filled", "outlined"],
+      "default": "default",
+      "description": "Select variant"
+    },
+    "className": {
+      "type": "string",
+      "description": "Additional CSS classes"
+    }
+  },
+  "required": ["options"]
+} 

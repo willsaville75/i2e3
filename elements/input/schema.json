@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the input"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["text", "email", "password", "number", "tel", "url", "search"],
+      "default": "text",
+      "description": "Input type"
+    },
+    "placeholder": {
+      "type": "string",
+      "description": "Placeholder text"
+    },
+    "value": {
+      "type": "string",
+      "description": "Controlled value"
+    },
+    "defaultValue": {
+      "type": "string",
+      "description": "Default value"
+    },
+    "disabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the input is disabled"
+    },
+    "required": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the input is required"
+    },
+    "label": {
+      "type": "string",
+      "description": "Label text"
+    },
+    "helperText": {
+      "type": "string",
+      "description": "Helper text below the input"
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message"
+    },
+    "size": {
+      "type": "string",
+      "enum": ["sm", "md", "lg"],
+      "default": "md",
+      "description": "Input size"
+    },
+    "variant": {
+      "type": "string",
+      "enum": ["default", "filled", "outlined"],
+      "default": "default",
+      "description": "Input variant"
+    },
+    "className": {
+      "type": "string",
+      "description": "Additional CSS classes"
+    }
+  }
+} 

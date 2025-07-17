@@ -1,0 +1,190 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "content": {
+      "type": "string",
+      "title": "Content",
+      "description": "The text content to display (supports HTML)"
+    },
+    "tag": {
+      "type": "string",
+      "title": "HTML Tag",
+      "description": "The HTML tag to use",
+      "enum": ["p", "span", "div", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "code", "pre", "strong", "em", "small", "mark"],
+      "default": "p"
+    },
+    "size": {
+      "type": "string",
+      "title": "Font Size",
+      "description": "Text size following Tailwind typography scale",
+      "enum": ["xs", "sm", "base", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "8xl", "9xl"],
+      "default": "base"
+    },
+    "weight": {
+      "type": "string",
+      "title": "Font Weight",
+      "description": "Font weight",
+      "enum": ["thin", "extralight", "light", "normal", "medium", "semibold", "bold", "extrabold", "black"],
+      "default": "normal"
+    },
+    "color": {
+      "type": "string",
+      "title": "Text Color",
+      "description": "Tailwind CSS text color class",
+      "enum": [
+        "text-slate-50", "text-slate-100", "text-slate-200", "text-slate-300", "text-slate-400", "text-slate-500", "text-slate-600", "text-slate-700", "text-slate-800", "text-slate-900", "text-slate-950",
+        "text-gray-50", "text-gray-100", "text-gray-200", "text-gray-300", "text-gray-400", "text-gray-500", "text-gray-600", "text-gray-700", "text-gray-800", "text-gray-900", "text-gray-950",
+        "text-zinc-50", "text-zinc-100", "text-zinc-200", "text-zinc-300", "text-zinc-400", "text-zinc-500", "text-zinc-600", "text-zinc-700", "text-zinc-800", "text-zinc-900", "text-zinc-950",
+        "text-neutral-50", "text-neutral-100", "text-neutral-200", "text-neutral-300", "text-neutral-400", "text-neutral-500", "text-neutral-600", "text-neutral-700", "text-neutral-800", "text-neutral-900", "text-neutral-950",
+        "text-stone-50", "text-stone-100", "text-stone-200", "text-stone-300", "text-stone-400", "text-stone-500", "text-stone-600", "text-stone-700", "text-stone-800", "text-stone-900", "text-stone-950",
+        "text-red-50", "text-red-100", "text-red-200", "text-red-300", "text-red-400", "text-red-500", "text-red-600", "text-red-700", "text-red-800", "text-red-900", "text-red-950",
+        "text-orange-50", "text-orange-100", "text-orange-200", "text-orange-300", "text-orange-400", "text-orange-500", "text-orange-600", "text-orange-700", "text-orange-800", "text-orange-900", "text-orange-950",
+        "text-amber-50", "text-amber-100", "text-amber-200", "text-amber-300", "text-amber-400", "text-amber-500", "text-amber-600", "text-amber-700", "text-amber-800", "text-amber-900", "text-amber-950",
+        "text-yellow-50", "text-yellow-100", "text-yellow-200", "text-yellow-300", "text-yellow-400", "text-yellow-500", "text-yellow-600", "text-yellow-700", "text-yellow-800", "text-yellow-900", "text-yellow-950",
+        "text-lime-50", "text-lime-100", "text-lime-200", "text-lime-300", "text-lime-400", "text-lime-500", "text-lime-600", "text-lime-700", "text-lime-800", "text-lime-900", "text-lime-950",
+        "text-green-50", "text-green-100", "text-green-200", "text-green-300", "text-green-400", "text-green-500", "text-green-600", "text-green-700", "text-green-800", "text-green-900", "text-green-950",
+        "text-emerald-50", "text-emerald-100", "text-emerald-200", "text-emerald-300", "text-emerald-400", "text-emerald-500", "text-emerald-600", "text-emerald-700", "text-emerald-800", "text-emerald-900", "text-emerald-950",
+        "text-teal-50", "text-teal-100", "text-teal-200", "text-teal-300", "text-teal-400", "text-teal-500", "text-teal-600", "text-teal-700", "text-teal-800", "text-teal-900", "text-teal-950",
+        "text-cyan-50", "text-cyan-100", "text-cyan-200", "text-cyan-300", "text-cyan-400", "text-cyan-500", "text-cyan-600", "text-cyan-700", "text-cyan-800", "text-cyan-900", "text-cyan-950",
+        "text-sky-50", "text-sky-100", "text-sky-200", "text-sky-300", "text-sky-400", "text-sky-500", "text-sky-600", "text-sky-700", "text-sky-800", "text-sky-900", "text-sky-950",
+        "text-blue-50", "text-blue-100", "text-blue-200", "text-blue-300", "text-blue-400", "text-blue-500", "text-blue-600", "text-blue-700", "text-blue-800", "text-blue-900", "text-blue-950",
+        "text-indigo-50", "text-indigo-100", "text-indigo-200", "text-indigo-300", "text-indigo-400", "text-indigo-500", "text-indigo-600", "text-indigo-700", "text-indigo-800", "text-indigo-900", "text-indigo-950",
+        "text-violet-50", "text-violet-100", "text-violet-200", "text-violet-300", "text-violet-400", "text-violet-500", "text-violet-600", "text-violet-700", "text-violet-800", "text-violet-900", "text-violet-950",
+        "text-purple-50", "text-purple-100", "text-purple-200", "text-purple-300", "text-purple-400", "text-purple-500", "text-purple-600", "text-purple-700", "text-purple-800", "text-purple-900", "text-purple-950",
+        "text-fuchsia-50", "text-fuchsia-100", "text-fuchsia-200", "text-fuchsia-300", "text-fuchsia-400", "text-fuchsia-500", "text-fuchsia-600", "text-fuchsia-700", "text-fuchsia-800", "text-fuchsia-900", "text-fuchsia-950",
+        "text-pink-50", "text-pink-100", "text-pink-200", "text-pink-300", "text-pink-400", "text-pink-500", "text-pink-600", "text-pink-700", "text-pink-800", "text-pink-900", "text-pink-950",
+        "text-rose-50", "text-rose-100", "text-rose-200", "text-rose-300", "text-rose-400", "text-rose-500", "text-rose-600", "text-rose-700", "text-rose-800", "text-rose-900", "text-rose-950"
+      ],
+      "default": "text-gray-900"
+    },
+    "align": {
+      "type": "string",
+      "title": "Text Alignment",
+      "description": "Text alignment",
+      "enum": ["left", "center", "right", "justify"],
+      "default": "left"
+    },
+    "lineHeight": {
+      "type": "string",
+      "title": "Line Height",
+      "description": "Line height (leading)",
+      "enum": ["none", "tight", "snug", "normal", "relaxed", "loose"],
+      "default": "normal"
+    },
+    "letterSpacing": {
+      "type": "string",
+      "title": "Letter Spacing",
+      "description": "Letter spacing (tracking)",
+      "enum": ["tighter", "tight", "normal", "wide", "wider", "widest"],
+      "default": "normal"
+    },
+    "decoration": {
+      "type": "string",
+      "title": "Text Decoration",
+      "description": "Text decoration",
+      "enum": ["none", "underline", "overline", "line-through"],
+      "default": "none"
+    },
+    "transform": {
+      "type": "string",
+      "title": "Text Transform",
+      "description": "Text case transformation",
+      "enum": ["none", "uppercase", "lowercase", "capitalize"],
+      "default": "none"
+    },
+    "fontFamily": {
+      "type": "string",
+      "title": "Font Family",
+      "description": "Font family",
+      "enum": ["sans", "serif", "mono"],
+      "default": "sans"
+    },
+    "backgroundColor": {
+      "type": "string",
+      "title": "Background Color",
+      "description": "Background color for this element",
+      "enum": [
+        "bg-transparent",
+        "bg-white",
+        "bg-gray-50",
+        "bg-gray-100",
+        "bg-gray-200",
+        "bg-gray-300",
+        "bg-gray-400",
+        "bg-gray-500",
+        "bg-gray-600",
+        "bg-gray-700",
+        "bg-gray-800",
+        "bg-gray-900",
+        "bg-slate-50",
+        "bg-slate-100",
+        "bg-slate-200",
+        "bg-slate-300",
+        "bg-slate-400",
+        "bg-slate-500",
+        "bg-slate-600",
+        "bg-slate-700",
+        "bg-slate-800",
+        "bg-slate-900",
+        "bg-blue-50",
+        "bg-blue-100",
+        "bg-blue-500",
+        "bg-blue-600",
+        "bg-green-50",
+        "bg-green-100",
+        "bg-green-500",
+        "bg-green-600",
+        "bg-yellow-50",
+        "bg-yellow-100",
+        "bg-yellow-500",
+        "bg-yellow-600",
+        "bg-red-50",
+        "bg-red-100",
+        "bg-red-500",
+        "bg-red-600",
+        "bg-purple-50",
+        "bg-purple-100",
+        "bg-purple-500",
+        "bg-purple-600"
+      ],
+      "default": "bg-transparent"
+    },
+    "padding": {
+      "type": "string",
+      "title": "Padding",
+      "description": "Padding around the text",
+      "enum": ["none", "xs", "sm", "md", "lg", "xl", "2xl"],
+      "default": "none"
+    },
+    "margin": {
+      "type": "string",
+      "title": "Margin",
+      "description": "Margin around the text",
+      "enum": ["none", "xs", "sm", "md", "lg", "xl", "2xl"],
+      "default": "none"
+    },
+    "maxWidth": {
+      "type": "string",
+      "title": "Max Width",
+      "description": "Maximum width constraint",
+      "enum": ["none", "xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "full", "prose"],
+      "default": "none"
+    },
+    "truncate": {
+      "type": "boolean",
+      "title": "Truncate",
+      "description": "Truncate text with ellipsis",
+      "default": false
+    },
+    "whitespace": {
+      "type": "string",
+      "title": "Whitespace",
+      "description": "Whitespace handling",
+      "enum": ["normal", "nowrap", "pre", "pre-line", "pre-wrap"],
+      "default": "normal"
+    }
+  },
+  "required": ["content"],
+  "additionalProperties": false
+} 

@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "string",
+      "title": "Link Text",
+      "description": "Text to display for the link"
+    },
+    "href": {
+      "type": "string",
+      "title": "URL",
+      "description": "URL the link points to"
+    },
+    "variant": {
+      "type": "string",
+      "title": "Variant",
+      "description": "Link style variant",
+      "enum": ["default", "primary", "secondary"],
+      "default": "default"
+    },
+    "size": {
+      "type": "string",
+      "title": "Size",
+      "description": "Link size",
+      "enum": ["sm", "md", "lg"],
+      "default": "md"
+    },
+    "underline": {
+      "type": "boolean",
+      "title": "Underline",
+      "description": "Whether to underline the link",
+      "default": true
+    },
+    "className": {
+      "type": "string",
+      "title": "CSS Classes",
+      "description": "Additional CSS classes"
+    }
+  },
+  "required": ["text", "href"]
+} 

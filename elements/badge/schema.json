@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "string",
+      "title": "Badge Text",
+      "description": "Text to display in badge"
+    },
+    "variant": {
+      "type": "string",
+      "title": "Variant",
+      "description": "Badge style variant",
+      "enum": ["default", "secondary", "success", "warning", "error"],
+      "default": "default"
+    },
+    "size": {
+      "type": "string",
+      "title": "Size",
+      "description": "Badge size",
+      "enum": ["sm", "md", "lg"],
+      "default": "md"
+    },
+    "className": {
+      "type": "string",
+      "title": "CSS Classes",
+      "description": "Additional CSS classes"
+    }
+  },
+  "required": ["text"]
+} 

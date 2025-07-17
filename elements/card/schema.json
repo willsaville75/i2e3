@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "header": {
+      "type": "string",
+      "description": "Content for the card header section"
+    },
+    "children": {
+      "type": "string",
+      "description": "Content for the card body section"
+    },
+    "footer": {
+      "type": "string",
+      "description": "Content for the card footer section"
+    },
+    "variant": {
+      "type": "string",
+      "enum": ["default", "outlined", "elevated", "filled"],
+      "default": "default",
+      "description": "Card variant"
+    },
+    "padding": {
+      "type": "string",
+      "enum": ["none", "sm", "md", "lg", "xl"],
+      "default": "md",
+      "description": "Card padding (applies to simple cards without sections)"
+    },
+    "rounded": {
+      "type": "string",
+      "enum": ["none", "sm", "md", "lg", "xl", "full"],
+      "default": "lg",
+      "description": "Card border radius"
+    },
+    "shadow": {
+      "type": "string",
+      "enum": ["none", "sm", "md", "lg", "xl"],
+      "default": "sm",
+      "description": "Card shadow"
+    },
+    "border": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to show border"
+    },
+    "hoverable": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether card has hover effects"
+    },
+    "className": {
+      "type": "string",
+      "description": "Additional CSS classes for the card container"
+    },
+    "headerClassName": {
+      "type": "string",
+      "description": "Additional CSS classes for the header section"
+    },
+    "bodyClassName": {
+      "type": "string",
+      "description": "Additional CSS classes for the body section"
+    },
+    "footerClassName": {
+      "type": "string",
+      "description": "Additional CSS classes for the footer section"
+    }
+  }
+} 

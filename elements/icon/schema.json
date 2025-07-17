@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Icon Name",
+      "description": "The name of the icon to display",
+      "enum": [
+        "clock",
+        "shield-check",
+        "users",
+        "banknotes",
+        "receipt-tax",
+        "academic-cap",
+        "x-mark",
+        "ellipsis-vertical",
+        "arrow-right"
+      ]
+    },
+    "size": {
+      "type": "string",
+      "title": "Size",
+      "description": "Icon size",
+      "enum": ["sm", "md", "lg"],
+      "default": "md"
+    },
+    "color": {
+      "type": "string",
+      "title": "Color",
+      "description": "Icon color (CSS color value)",
+      "default": "currentColor"
+    },
+    "className": {
+      "type": "string",
+      "title": "CSS Classes",
+      "description": "Additional CSS classes"
+    }
+  },
+  "required": ["name"]
+} 

@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "src": {
+      "type": "string",
+      "description": "Image source URL"
+    },
+    "alt": {
+      "type": "string",
+      "description": "Alternative text for the image"
+    },
+    "width": {
+      "type": "number",
+      "description": "Image width in pixels"
+    },
+    "height": {
+      "type": "number",
+      "description": "Image height in pixels"
+    },
+    "className": {
+      "type": "string",
+      "description": "Additional CSS classes"
+    },
+    "loading": {
+      "type": "string",
+      "enum": ["lazy", "eager"],
+      "default": "lazy",
+      "description": "Loading behavior"
+    },
+    "objectFit": {
+      "type": "string",
+      "enum": ["cover", "contain", "fill", "none", "scale-down"],
+      "default": "cover",
+      "description": "How the image should be resized"
+    },
+    "rounded": {
+      "type": "string",
+      "enum": ["none", "sm", "md", "lg", "xl", "full"],
+      "default": "none",
+      "description": "Border radius"
+    },
+    "shadow": {
+      "type": "string",
+      "enum": ["none", "sm", "md", "lg", "xl"],
+      "default": "none",
+      "description": "Shadow effect"
+    },
+    "aspectRatio": {
+      "type": "string",
+      "enum": ["1:1", "4:3", "16:9", "3:2", "2:3", "auto"],
+      "default": "auto",
+      "description": "Aspect ratio constraint"
+    },
+    "placeholder": {
+      "type": "string",
+      "enum": ["blur", "skeleton", "icon"],
+      "default": "skeleton",
+      "description": "Placeholder type while loading"
+    },
+    "fallbackSrc": {
+      "type": "string",
+      "description": "Fallback image URL if main image fails"
+    }
+  },
+  "required": ["src", "alt"]
+} 

@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the textarea"
+    },
+    "placeholder": {
+      "type": "string",
+      "description": "Placeholder text"
+    },
+    "value": {
+      "type": "string",
+      "description": "Controlled value"
+    },
+    "defaultValue": {
+      "type": "string",
+      "description": "Default value"
+    },
+    "disabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the textarea is disabled"
+    },
+    "required": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the textarea is required"
+    },
+    "label": {
+      "type": "string",
+      "description": "Label text"
+    },
+    "helperText": {
+      "type": "string",
+      "description": "Helper text below the textarea"
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message"
+    },
+    "rows": {
+      "type": "number",
+      "default": 4,
+      "description": "Number of rows"
+    },
+    "cols": {
+      "type": "number",
+      "description": "Number of columns"
+    },
+    "resize": {
+      "type": "string",
+      "enum": ["none", "vertical", "horizontal", "both"],
+      "default": "vertical",
+      "description": "Resize behavior"
+    },
+    "size": {
+      "type": "string",
+      "enum": ["sm", "md", "lg"],
+      "default": "md",
+      "description": "Textarea size"
+    },
+    "variant": {
+      "type": "string",
+      "enum": ["default", "filled", "outlined"],
+      "default": "default",
+      "description": "Textarea variant"
+    },
+    "className": {
+      "type": "string",
+      "description": "Additional CSS classes"
+    }
+  }
+} 

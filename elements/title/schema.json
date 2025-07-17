@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "content": {
+      "type": "string",
+      "title": "Content",
+      "description": "The title text content"
+    },
+    "level": {
+      "type": "integer",
+      "title": "Heading Level",
+      "description": "HTML heading level (1-6)",
+      "enum": [1, 2, 3, 4, 5, 6],
+      "default": 1
+    },
+    "size": {
+      "type": "string",
+      "title": "Text Size",
+      "description": "Text size following Tailwind typography scale",
+      "enum": ["xs", "sm", "base", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "8xl", "9xl"],
+      "default": "4xl"
+    },
+    "weight": {
+      "type": "string",
+      "title": "Font Weight",
+      "description": "Font weight",
+      "enum": ["light", "normal", "medium", "semibold", "bold", "extrabold"],
+      "default": "bold"
+    },
+    "color": {
+      "type": "string",
+      "title": "Color",
+      "description": "Tailwind CSS text color class",
+      "default": "text-gray-900"
+    },
+    "backgroundColor": {
+      "type": "string",
+      "title": "Background Color",
+      "description": "Background color for this element",
+      "enum": [
+        "bg-transparent",
+        "bg-white",
+        "bg-gray-50",
+        "bg-gray-100",
+        "bg-blue-50",
+        "bg-blue-100",
+        "bg-green-50",
+        "bg-green-100",
+        "bg-yellow-50",
+        "bg-yellow-100",
+        "bg-red-50",
+        "bg-red-100",
+        "bg-purple-50",
+        "bg-purple-100"
+      ],
+      "default": "bg-transparent"
+    }
+  },
+  "required": ["content"],
+  "additionalProperties": false
+} 

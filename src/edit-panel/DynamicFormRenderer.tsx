@@ -22,14 +22,40 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
   onChange,
   className
 }) => {
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
-
-  // Initialize expanded sections
-  useEffect(() => {
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(() => {
+    // Initialize with default expanded sections on first render
     const defaultExpanded = sections
       .filter(section => section.defaultExpanded)
       .map(section => section.id);
-    setExpandedSections(new Set(defaultExpanded));
+    return new Set(defaultExpanded);
+  });
+
+  // Only update expanded sections if new sections are added (preserve user's manual expansions)
+  useEffect(() => {
+    const currentSectionIds = new Set(sections.map(s => s.id));
+    const defaultExpanded = sections
+      .filter(section => section.defaultExpanded)
+      .map(section => section.id);
+    
+    setExpandedSections(prev => {
+      const newSet = new Set(prev);
+      
+      // Remove sections that no longer exist
+      for (const sectionId of prev) {
+        if (!currentSectionIds.has(sectionId)) {
+          newSet.delete(sectionId);
+        }
+      }
+      
+      // Add new default expanded sections (only if they weren't manually collapsed)
+      for (const sectionId of defaultExpanded) {
+        if (!prev.has(sectionId)) {
+          newSet.add(sectionId);
+        }
+      }
+      
+      return newSet;
+    });
   }, [sections]);
 
   const toggleSection = (sectionId: string) => {

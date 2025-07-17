@@ -94,7 +94,11 @@ export const IndyChatPanel: React.FC = () => {
         const action = result.action;
         
         // Handle AI-first response format from orchestrator
-        if (action.type === 'UPDATE_BLOCK' && action.data) {
+        if (action.type === 'CONTEXT_EXPLANATION') {
+          // Handle context explanation from context agent
+          assistantMessage = action.explanation || result.message || 'Here\'s what I know about this block.';
+          confidence = result.confidence || 1.0;
+        } else if (action.type === 'UPDATE_BLOCK' && action.data) {
           // Apply the updated block data directly from AI
           if (selectedBlock && selectedIndex !== null) {
             updateBlock(selectedIndex, action.data);

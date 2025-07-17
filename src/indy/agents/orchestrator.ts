@@ -29,7 +29,7 @@ export function classifyIntentToAgent(input: string): string {
   const lower = input.toLowerCase();
   let agentName: string;
   
-  if (lower.includes('explain') || lower.includes('describe') || lower.includes('what is') || lower.includes('tell me about')) {
+  if (lower.includes('explain') || lower.includes('describe') || lower.includes('what is') || lower.includes('tell me about') || lower.includes('what do you know')) {
     agentName = 'runIndyContextAgent';
   } else if (lower.includes('create') || lower.includes('new')) {
     agentName = 'createAgent';

@@ -245,7 +245,7 @@ function generateLayoutSection(schema: any, _propertyMappings: PropertyMapping[]
     description: 'Control block dimensions, spacing, and alignment',
     fields: fields.sort((a, b) => (a.order || 0) - (b.order || 0)),
     collapsible: true,
-    defaultExpanded: true
+    defaultExpanded: false
   };
 }
 
@@ -375,7 +375,7 @@ function generateContentSection(schema: any): FormSection {
     description: 'Edit text content and elements',
     fields: fields.sort((a, b) => (a.order || 0) - (b.order || 0)),
     collapsible: true,
-    defaultExpanded: true
+    defaultExpanded: false
   };
 }
 

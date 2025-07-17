@@ -24,6 +24,15 @@ export interface ContextAgentInput {
 export default async function run(input: ContextAgentInput): Promise<string> {
   const { blockType, props, aiHints } = input;
   
+  // Handle case where no block is selected
+  if (!blockType) {
+    return `### No Block Selected
+
+Please select a block first, then I can tell you about its context, current values, and design intent.
+
+To select a block, click on any block in the canvas on the left side of the screen.`;
+  }
+  
   // Generate block overview
   const overview = generateBlockOverview(blockType, props);
   
@@ -53,12 +62,16 @@ export default async function run(input: ContextAgentInput): Promise<string> {
  * Generates a friendly overview of what the block is and does
  */
 function generateBlockOverview(blockType: string, props: any): string {
+  if (!blockType) {
+    return 'No block type provided';
+  }
+  
   const blockName = blockType.charAt(0).toUpperCase() + blockType.slice(1);
   
   if (blockType === 'hero') {
-    const hasTitle = props?.elements?.title?.content;
-    const hasSubtitle = props?.elements?.subtitle?.content;
-    const hasButton = props?.elements?.button?.text;
+    const hasTitle = props?.content?.title;
+    const hasSubtitle = props?.content?.subtitle;
+    const hasButton = props?.content?.buttonText;
     
     const components = [];
     if (hasTitle) components.push('title');
@@ -87,25 +100,24 @@ function generateCurrentValues(props: any): string {
   const values = [];
   
   // Handle hero block structure
-  if (props.elements) {
-    const { title, subtitle, button } = props.elements;
+  if (props.content) {
+    const { title, subtitle, buttonText, buttonUrl } = props.content;
     
-    if (title?.content) {
-      values.push(`- **Title**: "${title.content}" (heading level ${title.level || 1})`);
+    if (title) {
+      values.push(`- **Title**: "${title}"`);
     } else {
       values.push(`- **Title**: *Not set*`);
     }
     
-    if (subtitle?.content) {
-      values.push(`- **Subtitle**: "${subtitle.content}"`);
+    if (subtitle) {
+      values.push(`- **Subtitle**: "${subtitle}"`);
     } else {
       values.push(`- **Subtitle**: *Not set*`);
     }
     
-    if (button?.text) {
-      const href = button.href ? ` → ${button.href}` : '';
-      const variant = button.variant ? ` (${button.variant})` : '';
-      values.push(`- **Button**: "${button.text}"${href}${variant}`);
+    if (buttonText) {
+      const href = buttonUrl ? ` → ${buttonUrl}` : '';
+      values.push(`- **Button**: "${buttonText}"${href}`);
     } else {
       values.push(`- **Button**: *Not set*`);
     }

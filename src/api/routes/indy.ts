@@ -148,28 +148,54 @@ router.post('/action', async (req: Request, res: Response) => {
     
     const agentName = classifyIntentToAgent(userInput);
     
-    // Prepare agent input
-    const agentInput = {
-      blockType: blockType || 'hero',
-      currentData: blockData,
-      intent: userInput,
-      blockId
-    };
+    // Prepare agent input based on agent type
+    let agentInput;
+    if (agentName === 'runIndyContextAgent') {
+      // Context agent needs exact blockType (or undefined) to handle no selection
+      agentInput = {
+        blockType,
+        props: blockData,
+        schema: null,
+        aiHints: null
+      };
+    } else {
+      // Other agents can use default blockType
+              agentInput = {
+          blockType: blockType || 'hero',
+          currentData: blockData,
+          intent: userInput,
+          blockId
+        };
+    }
     
     const result = await runAgent(agentName, agentInput);
     
-    res.json({
-      success: true,
-      action: {
-        type: blockId ? 'UPDATE_BLOCK' : 'ADD_BLOCK',
-        blockType: blockType || 'hero',
-        blockId,
-        data: result.blockData || result
-      },
-      message: 'Content updated successfully',
-      confidence: 0.9,
-      agentUsed: agentName
-    });
+    // Handle different agent response types
+    if (agentName === 'runIndyContextAgent') {
+      res.json({
+        success: true,
+        action: {
+          type: 'CONTEXT_EXPLANATION',
+          explanation: result
+        },
+        message: result,
+        confidence: 1.0,
+        agentUsed: agentName
+      });
+    } else {
+      res.json({
+        success: true,
+        action: {
+          type: blockId ? 'UPDATE_BLOCK' : 'ADD_BLOCK',
+          blockType: blockType || 'hero',
+          blockId,
+          data: result.blockData || result
+        },
+        message: 'Content updated successfully',
+        confidence: 0.9,
+        agentUsed: agentName
+      });
+    }
     
   } catch (error) {
     console.error('Error in Indy action:', error);

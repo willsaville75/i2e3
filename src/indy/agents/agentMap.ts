@@ -6,7 +6,7 @@ import runIndyExecutionAgent from './runIndyExecutionAgent';
 import runIndyPromptAgent from './runIndyPromptAgent';
 import runIndyResponseAgent from './runIndyResponseAgent';
 import runIndyContextAgent from './runIndyContextAgent';
-import { runIndyPropertyAgent } from './runIndyPropertyAgent';
+// Property agent removed - using AI-first orchestrator system
 
 /**
  * Agent registry mapping agent names to their implementations
@@ -14,7 +14,7 @@ import { runIndyPropertyAgent } from './runIndyPropertyAgent';
 export const agentMap: Record<string, Function> = {
   createAgent,
   updateAgent,
-  propertyAgent: runIndyPropertyAgent,
+  // propertyAgent removed - using AI-first orchestrator system
   runIndyBlockAgent,
   runIndyPageAgent,
   runIndyExecutionAgent,

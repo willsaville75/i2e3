@@ -5,7 +5,7 @@
  * Eliminates the need for hardcoded property handling in each block
  */
 
-import { spacing, colors, sizing, alignment } from './tokens';
+import { spacing, colors, alignment } from './tokens';
 
 export interface PropertyMapping {
   path: string;                           // Schema path: "layout.blockSettings.blockWidth"
@@ -184,7 +184,7 @@ export const HERO_PROPERTY_MAPPINGS: PropertyMapping[] = [
              || colors.scheme.blue['500'];
     },
     selector: 'section',
-    condition: (value: any, blockData?: any) => blockData?.background?.type === 'color'
+    condition: (_value: any, blockData?: any) => blockData?.background?.type === 'color'
   },
   
   // Background Gradient
@@ -192,14 +192,14 @@ export const HERO_PROPERTY_MAPPINGS: PropertyMapping[] = [
     path: 'background.gradient',
     type: 'style',
     target: 'background',
-    transform: (value: string, blockData?: any) => {
+    transform: (_value: string, blockData?: any) => {
       if (blockData?.background?.type !== 'gradient') return null;
       
       // This will be handled by the gradient system
       return null; // Special case - handled separately
     },
     selector: 'section',
-    condition: (value: any, blockData?: any) => blockData?.background?.type === 'gradient'
+    condition: (_value: any, blockData?: any) => blockData?.background?.type === 'gradient'
   }
 ];
 

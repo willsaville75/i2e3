@@ -86,7 +86,7 @@ export function generateFormConfig(blockType: string, schema: any): FormSection[
 /**
  * Generate layout section from schema
  */
-function generateLayoutSection(schema: any, propertyMappings: PropertyMapping[]): FormSection {
+function generateLayoutSection(schema: any, _propertyMappings: PropertyMapping[]): FormSection {
   const fields: FormFieldConfig[] = [];
   
   // Block Settings

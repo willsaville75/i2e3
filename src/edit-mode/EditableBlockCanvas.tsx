@@ -15,7 +15,7 @@ export const EditableBlockCanvas: React.FC = () => {
   };
 
   return (
-    <div className="py-8 px-6 space-y-6">
+    <div className="space-y-6">
       {blocks.map((block, index) => {
           const isSelected = selectedIndex === index;
           

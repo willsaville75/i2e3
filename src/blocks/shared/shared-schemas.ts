@@ -4,13 +4,12 @@
  */
 
 import { 
-  spacing, 
-  gradient 
+  spacing
 } from './tokens'
 
 // Get token values as arrays for enum properties
 const spacingValues = Object.keys(spacing).map(String)
-const gradientValues = Object.keys(gradient)
+// const gradientValues = Object.keys(gradient) // Unused
 
 // Layout Schema (JSON Schema format)
 export const layoutSchema = {

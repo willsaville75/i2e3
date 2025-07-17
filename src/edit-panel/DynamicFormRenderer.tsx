@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import clsx from 'clsx';
-import { FormFieldConfig, FormSection, ConditionalRule } from '../blocks/shared/schema-generator';
-import { getNestedValue, setNestedValue } from '../blocks/shared/property-mappings';
+import { FormFieldConfig, FormSection } from '../blocks/shared/schema-generator';
+import { getNestedValue } from '../blocks/shared/property-mappings';
 
 export interface DynamicFormRendererProps {
   sections: FormSection[];

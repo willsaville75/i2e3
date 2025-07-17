@@ -37,14 +37,7 @@ export type {
   PromptAgentInput
 } from './agents';
 
-// Client functionality from runIndyAction
-export { runIndyAction } from './runIndyAction';
-export { applyIndyAction } from './runIndyAction';
-export type { BlockData } from './runIndyAction';
-export type { IndyAction } from './runIndyAction';
-export type { IndyActionType } from './runIndyAction';
-export type { IndyActionResult } from './runIndyAction';
-export type { PageContext } from './runIndyAction';
+// runIndyAction removed - using AI-first orchestrator system
 
 // Default export is the simplified runner
 export { runIndy as default } from './agents/runIndy'; 

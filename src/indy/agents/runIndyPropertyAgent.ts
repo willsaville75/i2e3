@@ -8,7 +8,7 @@
  * When called from API, returns updated data for frontend to apply
  */
 
-import { classifyPropertyIntent, convertIntentToPropertyUpdate, PropertyIntent } from '../utils/classifyPropertyIntent';
+import { classifyIntentToAgent } from './orchestrator';
 import { getNestedValue, setNestedValue } from '../../blocks/shared/property-mappings';
 
 export interface PropertyAgentResult {

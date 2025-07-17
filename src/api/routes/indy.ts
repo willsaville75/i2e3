@@ -1,90 +1,136 @@
 import { Router, type Request, type Response } from 'express';
-import { runIndyPropertyAgent, isPropertyIntent } from '../../indy/agents/runIndyPropertyAgent';
-import { classifyPropertyIntent } from '../../indy/utils/classifyPropertyIntent';
+import { runAgent, classifyIntentToAgent } from '../../indy/agents/orchestrator';
 
 const router: Router = Router();
 
 /**
  * POST /api/indy/generate
- * Generate block content using Indy
+ * Generate block content using Indy with efficient AI-driven agent selection
  */
 router.post('/generate', async (req: Request, res: Response) => {
+  const startTime = Date.now();
   try {
     const { userInput, blockType, currentData, tokens } = req.body;
     
-    if (!userInput) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'userInput is required' 
+    // Validate required fields
+    if (!userInput || !blockType) {
+      return res.status(400).json({
+        error: 'userInput and blockType are required'
       });
     }
+    console.log(`📥 Request validated (${Date.now() - startTime}ms)`);
     
-    // TODO: Implement actual AI generation logic here
-    // For now, return a simple response
+    // Use AI-driven agent classification instead of regex patterns
+    const agentName = classifyIntentToAgent(userInput);
+    console.log(`🎯 Agent selected: ${agentName} (AI-driven classification) (${Date.now() - startTime}ms)`);
     
-    const mockResponse = {
-      success: true,
-      blockData: {
-        elements: {
-          title: {
-            content: `Updated: ${userInput}`,
-            level: 1
-          },
-          subtitle: {
-            content: "This is a mock response from the Indy API"
-          }
-        }
+    // Prepare input for the selected agent
+    console.log(`🔧 Preparing agent input (${Date.now() - startTime}ms)`);
+    let agentInput;
+    
+    // Prepare input based on agent type
+    if (agentName === 'createAgent') {
+      agentInput = {
+        blockType,
+        intent: userInput,
+        tokens: tokens || {}
+      };
+    } else if (agentName === 'updateAgent') {
+      agentInput = {
+        blockType,
+        currentData,
+        intent: userInput,
+        tokens: tokens || {}
+      };
+    } else if (agentName === 'runIndyBlockAgent') {
+      agentInput = {
+        context: {
+          blockType,
+          current: currentData,
+          intent: currentData ? 'update' : 'create'
+        },
+        model: 'gpt-4o-mini',
+        instructions: userInput
+      };
+    } else if (agentName === 'runIndyPageAgent') {
+      agentInput = {
+        context: {
+          blocks: [{ blockType, current: currentData }]
+        },
+        model: 'gpt-4o-mini',
+        goal: userInput
+      };
+    } else if (agentName === 'runIndyExecutionAgent') {
+      agentInput = {
+        blockType,
+        currentData,
+        userInput,
+        tokens: tokens || {}
+      };
+    } else if (agentName === 'runIndyContextAgent') {
+      agentInput = {
+        blockType,
+        props: currentData,
+        schema: null,
+        aiHints: null
+      };
+    } else {
+      // Default fallback for any other agents
+      agentInput = {
+        blockType,
+        currentData,
+        intent: userInput,
+        tokens: tokens || {}
+      };
+    }
+    
+    // Execute the selected agent (SINGLE AI CALL)
+    console.log(`🚀 Calling agent ${agentName} (${Date.now() - startTime}ms)`);
+    const result = await runAgent(agentName, agentInput);
+    console.log(`✅ Agent completed (${Date.now() - startTime}ms)`);
+    
+    // Extract block data based on agent type
+    console.log(`🔍 Extracting block data (${Date.now() - startTime}ms)`);
+    let blockData;
+    if (agentName === 'runIndyContextAgent') {
+      blockData = { explanation: result };
+    } else if (result.blockData) {
+      blockData = result.blockData;
+    } else if (result.result) {
+      blockData = result.result;
+    } else {
+      blockData = result;
+    }
+    
+    const responseData = {
+      success: result.success !== false,
+      blockData,
+      agentUsed: agentName,
+      userInput,
+      error: result.error,
+      timing: {
+        totalMs: Date.now() - startTime
       }
     };
     
-    res.json(mockResponse);
+    console.log(`📤 Sending response (${Date.now() - startTime}ms)`);
+    console.log(`📏 Response size: ${JSON.stringify(responseData).length} chars`);
+    
+    res.json(responseData);
+    console.log(`✅ Response sent successfully (${Date.now() - startTime}ms)`);
     
   } catch (error) {
     console.error('Error in Indy generate:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Internal server error' 
-    });
-  }
-});
-
-/**
- * POST /api/indy/test-property-intent
- * Test property intent classification
- */
-router.post('/test-property-intent', async (req: Request, res: Response) => {
-  try {
-    const { userInput } = req.body;
-    
-    if (!userInput) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'userInput is required' 
-      });
-    }
-    
-    // Test property intent classification
-    const intents = classifyPropertyIntent(userInput);
-    
-    res.json({
-      success: true,
-      userInput,
-      intents,
-      isPropertyIntent: intents.length > 0 && intents[0].confidence > 0.6
-    });
-    
-  } catch (error) {
-    console.error('Error in property intent test:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Internal server error' 
+    res.status(500).json({
+      error: 'Failed to generate block content',
+      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
 
 /**
  * POST /api/indy/action
- * Execute an Indy action (API-only version)
+ * Execute an Indy action using efficient AI-first approach
  */
 router.post('/action', async (req: Request, res: Response) => {
   try {
@@ -97,67 +143,33 @@ router.post('/action', async (req: Request, res: Response) => {
       });
     }
     
-    // Check if this is a property-related intent
-    if (isPropertyIntent(userInput)) {
-      if (!blockId || !blockData) {
-        return res.status(400).json({
-          success: false,
-          error: 'blockId and blockData are required for property updates'
-        });
-      }
-      
-      console.log('🔧 API: Detected property intent, using property agent');
-      
-      // Run property agent with provided block data (don't update store)
-      const propertyResult = await runIndyPropertyAgent(
-        userInput,
+    // AI-first: Use orchestrator to classify and route efficiently
+    console.log('🤖 API: Using AI-first orchestrator approach');
+    
+    const agentName = classifyIntentToAgent(userInput);
+    
+    // Prepare agent input
+    const agentInput = {
+      blockType: blockType || 'hero',
+      currentData: blockData,
+      intent: userInput,
+      blockId
+    };
+    
+    const result = await runAgent(agentName, agentInput);
+    
+    res.json({
+      success: true,
+      action: {
+        type: blockId ? 'UPDATE_BLOCK' : 'ADD_BLOCK',
+        blockType: blockType || 'hero',
         blockId,
-        blockData,
-        false // Don't update store on server side
-      );
-      
-      if (propertyResult.success) {
-        res.json({
-          success: true,
-          action: {
-            type: 'PROPERTY_UPDATE',
-            blockType: blockType || 'unknown',
-            blockId,
-            data: propertyResult.changes,
-            propertyChanges: propertyResult.changes
-          },
-          message: propertyResult.message,
-          confidence: propertyResult.confidence
-        });
-      } else {
-        res.status(400).json({
-          success: false,
-          error: propertyResult.message
-        });
-      }
-    } else {
-      // Handle content changes with AI generation
-      console.log('📝 API: Using AI generation for content changes');
-      
-      // For now, return a mock response
-      res.json({
-        success: true,
-        action: {
-          type: blockId ? 'UPDATE_BLOCK' : 'ADD_BLOCK',
-          blockType: blockType || 'hero',
-          blockId,
-          data: {
-            elements: {
-              title: {
-                content: `Updated: ${userInput}`,
-                level: 1
-              }
-            }
-          }
-        },
-        message: 'Content updated successfully'
-      });
-    }
+        data: result.blockData || result
+      },
+      message: 'Content updated successfully',
+      confidence: 0.9,
+      agentUsed: agentName
+    });
     
   } catch (error) {
     console.error('Error in Indy action:', error);

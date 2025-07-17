@@ -173,7 +173,7 @@ const SiteRouterContent: React.FC<{ siteSlug: string; entrySlug: string }> = ({
         <>
           <PageNav />
           <div className="min-h-screen bg-white">
-            <div className="max-w-4xl mx-auto py-8 px-6">
+            <div className="py-8 px-6">
               <div className="space-y-8">
                 {blocks.map((block: BlockInstance) => (
                   <BlockRenderer

@@ -93,8 +93,20 @@ export const IndyChatPanel: React.FC = () => {
       if (result.success) {
         const action = result.action;
         
-        if (action.type === 'PROPERTY_UPDATE') {
-          // Handle property updates
+        // Handle AI-first response format from orchestrator
+        if (action.type === 'UPDATE_BLOCK' && action.data) {
+          // Apply the updated block data directly from AI
+          if (selectedBlock && selectedIndex !== null) {
+            updateBlock(selectedIndex, action.data);
+            console.log('✅ IndyChatPanel: Applied AI-generated block update', selectedIndex);
+            assistantMessage = result.message || '✅ Content updated successfully!';
+            confidence = result.confidence || 0.9;
+          } else {
+            assistantMessage = '⚠️ Please select a block first, then I can make changes to it.';
+            confidence = 0.8;
+          }
+        } else if (action.type === 'PROPERTY_UPDATE') {
+          // Handle legacy property updates (for backward compatibility)
           const changes = action.propertyChanges || [];
           if (changes.length === 1) {
             const change = changes[0];
@@ -107,18 +119,19 @@ export const IndyChatPanel: React.FC = () => {
           
           // Apply the property changes to the blockStore for live preview
           if (result.action.data && selectedBlock && selectedIndex !== null) {
-            // Apply the changes to get updated block data
             let updatedBlockData = JSON.parse(JSON.stringify(selectedBlock.blockData));
+            
             for (const change of changes) {
               setNestedValue(updatedBlockData, change.property, change.newValue);
             }
             
             updateBlock(selectedIndex, updatedBlockData);
+            console.log('✅ IndyChatPanel: Applied property changes to block', selectedIndex);
           }
         } else {
-          // Handle content updates
-          assistantMessage = '✅ Content updated successfully!';
-          confidence = 0.8;
+          // Handle other action types
+          assistantMessage = result.message || '✅ Content updated successfully!';
+          confidence = result.confidence || 0.8;
         }
       } else {
         assistantMessage = '❌ Sorry, I couldn\'t complete that request. Please try rephrasing or be more specific.';

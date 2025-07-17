@@ -1,5 +1,5 @@
 import { agentMap } from './agentMap';
-import { isPropertyIntent } from './runIndyPropertyAgent';
+// AI-first orchestrator - no regex-based classification needed
 
 /**
  * Execute an agent by name with input and optional memory
@@ -20,28 +20,33 @@ export async function runAgent(agentName: string, input: any): Promise<any> {
 
 /**
  * Classify user intent and return appropriate agent name
+ * AI-first: The agents themselves use AI, classification is simple keyword matching
  */
 export function classifyIntentToAgent(input: string): string {
-  // First check if it's a property-related intent
-  if (isPropertyIntent(input)) {
-    return 'propertyAgent';
+  const startTime = Date.now();
+  console.log(`🧠 Classifying intent: "${input}" (${Date.now() - startTime}ms)`);
+  
+  const lower = input.toLowerCase();
+  let agentName: string;
+  
+  if (lower.includes('explain') || lower.includes('describe') || lower.includes('what is') || lower.includes('tell me about')) {
+    agentName = 'runIndyContextAgent';
+  } else if (lower.includes('create') || lower.includes('new')) {
+    agentName = 'createAgent';
+  } else if (lower.includes('update') || lower.includes('change') || lower.includes('make') || lower.includes('set')) {
+    agentName = 'updateAgent';
+  } else if (lower.includes('page')) {
+    agentName = 'runIndyPageAgent';
+  } else if (lower.includes('block')) {
+    agentName = 'runIndyBlockAgent';
+  } else if (lower.includes('flow') || lower.includes('execute')) {
+    agentName = 'runIndyExecutionAgent';
+  } else {
+    agentName = 'updateAgent'; // Default to updateAgent - it can handle most requests
   }
   
-  // Simple keyword-based classification for other intents
-  const lowerInput = input.toLowerCase();
-  
-  // Check for update-related keywords
-  if (lowerInput.includes('update') || lowerInput.includes('change') || lowerInput.includes('modify') || lowerInput.includes('edit')) {
-    return 'updateAgent';
-  }
-  
-  // Check for create-related keywords
-  if (lowerInput.includes('create') || lowerInput.includes('new') || lowerInput.includes('add') || lowerInput.includes('make') || lowerInput.includes('generate')) {
-    return 'createAgent';
-  }
-  
-  // Default to createAgent for ambiguous cases
-  return 'createAgent';
+  console.log(`🎯 Intent classified as: ${agentName} (${Date.now() - startTime}ms)`);
+  return agentName;
 }
 
 /**

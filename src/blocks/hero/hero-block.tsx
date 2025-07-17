@@ -43,7 +43,6 @@ export const HeroBlock: React.FC<HeroProps> = (props) => {
             props: {
               content: elements.title.content,
               level: elements.title.level,
-              size: '5xl',
               weight: 'extrabold',
               color: getTextColorClass(),
               align: textAlignment as keyof typeof alignment.text || 'center'

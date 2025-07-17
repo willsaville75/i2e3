@@ -32,12 +32,19 @@ export function setNestedValue(obj: any, path: string, value: any): any {
   const keys = path.split('.');
   const lastKey = keys.pop()!;
   
-  const target = keys.reduce((current, key) => {
-    if (!current[key]) current[key] = {};
-    return current[key];
-  }, obj);
+  // Create nested structure if it doesn't exist
+  let current = obj;
+  for (const key of keys) {
+    if (!current[key] || typeof current[key] !== 'object') {
+      current[key] = {};
+    }
+    current = current[key];
+  }
   
-  target[lastKey] = value;
+  // Set the final value
+  current[lastKey] = value;
+  
+  console.log(`🔧 setNestedValue: Set ${path} = ${value} in object:`, JSON.stringify(obj, null, 2));
   return obj;
 }
 

@@ -1,0 +1,52 @@
+{
+  "id": "cmd7umgi2001ds7isibsjj2b3",
+  "blockType": "hero",
+  "blockData": {
+    "layout": {
+      "blockSettings": {
+        "height": "screen",
+        "margin": {
+          "top": "lg",
+          "bottom": "lg"
+        }
+      },
+      "contentSettings": {
+        "padding": {
+          "top": "2xl",
+          "bottom": "2xl"
+        },
+        "contentWidth": "wide",
+        "textAlignment": "center",
+        "contentAlignment": {
+          "vertical": "center",
+          "horizontal": "center"
+        }
+      }
+    },
+    "elements": {
+      "title": {
+        "level": 1,
+        "content": "Expand Your Horizons"
+      },
+      "button": {
+        "href": "/explore",
+        "size": "lg",
+        "text": "Get Started",
+        "variant": "primary"
+      },
+      "subtitle": {
+        "content": "Experience the full potential of our platform with a seamless, full-width design."
+      }
+    },
+    "background": {
+      "type": "color",
+      "color": "blue",
+      "colorIntensity": "medium"
+    }
+  },
+  "position": 1,
+  "styles": null,
+  "entryId": "cmd7i9r0e0001s732xo0qr2ex",
+  "createdAt": "2025-07-17T20:34:40.010Z",
+  "updatedAt": "2025-07-17T20:34:40.010Z"
+}

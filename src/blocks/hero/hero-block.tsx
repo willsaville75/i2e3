@@ -132,15 +132,34 @@ export const HeroBlock: React.FC<HeroProps> = ({
   
   // Get background style using shared gradient utilities
   const getBackgroundStyle = () => {
-    if (background?.type === 'gradient' && background.gradient) {
-      return createGradientStyle({
-        type: 'linear',
-        direction: (background.gradient.direction && background.gradient.direction in gradient.direction) 
-          ? background.gradient.direction as keyof typeof gradient.direction 
-          : 'to-r',
-        fromColor: background.gradient.fromColor,
-        toColor: background.gradient.toColor
-      });
+    if (background?.type === 'gradient') {
+      // Handle schema-compliant format: background.gradient object with fromColor/toColor
+      if (background.gradient && typeof background.gradient === 'object' && background.gradient.fromColor) {
+        return createGradientStyle({
+          type: 'linear',
+          direction: (background.gradient.direction && background.gradient.direction in gradient.direction) 
+            ? background.gradient.direction as keyof typeof gradient.direction 
+            : 'to-r',
+          fromColor: background.gradient.fromColor,
+          toColor: background.gradient.toColor
+        });
+      }
+      
+      // Handle AI-generated format: background.gradient with preset name (string)
+      if (background.gradient && typeof background.gradient === 'string' && background.gradient in gradient.presets) {
+        return createGradientStyle({
+          type: 'linear',
+          preset: background.gradient as keyof typeof gradient.presets
+        });
+      }
+      
+      // Handle AI-generated format: background.color with preset name
+      if (background.color && background.color in gradient.presets) {
+        return createGradientStyle({
+          type: 'linear',
+          preset: background.color as keyof typeof gradient.presets
+        });
+      }
     }
     return {};
   };

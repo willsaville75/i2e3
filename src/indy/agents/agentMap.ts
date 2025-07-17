@@ -6,6 +6,7 @@ import runIndyExecutionAgent from './runIndyExecutionAgent';
 import runIndyPromptAgent from './runIndyPromptAgent';
 import runIndyResponseAgent from './runIndyResponseAgent';
 import runIndyContextAgent from './runIndyContextAgent';
+import { runIndyPropertyAgent } from './runIndyPropertyAgent';
 
 /**
  * Agent registry mapping agent names to their implementations
@@ -13,10 +14,11 @@ import runIndyContextAgent from './runIndyContextAgent';
 export const agentMap: Record<string, Function> = {
   createAgent,
   updateAgent,
+  propertyAgent: runIndyPropertyAgent,
   runIndyBlockAgent,
   runIndyPageAgent,
   runIndyExecutionAgent,
   runIndyPromptAgent,
   runIndyResponseAgent,
-  runIndyContextAgent
+  runIndyContextAgent,
 }; 

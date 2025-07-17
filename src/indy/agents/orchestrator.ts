@@ -1,4 +1,5 @@
 import { agentMap } from './agentMap';
+import { isPropertyIntent } from './runIndyPropertyAgent';
 
 /**
  * Execute an agent by name with input and optional memory
@@ -21,7 +22,12 @@ export async function runAgent(agentName: string, input: any): Promise<any> {
  * Classify user intent and return appropriate agent name
  */
 export function classifyIntentToAgent(input: string): string {
-  // Simple keyword-based classification
+  // First check if it's a property-related intent
+  if (isPropertyIntent(input)) {
+    return 'propertyAgent';
+  }
+  
+  // Simple keyword-based classification for other intents
   const lowerInput = input.toLowerCase();
   
   // Check for update-related keywords

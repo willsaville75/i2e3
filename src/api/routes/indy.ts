@@ -1,132 +1,115 @@
-import { Router, type Request, type Response } from 'express'
-import { runAgent, classifyIntentToAgent } from '../../indy/agents/orchestrator'
+import { Router, type Request, type Response } from 'express';
+import { runIndyAction } from '../../indy/runIndyAction';
+import { classifyPropertyIntent } from '../../indy/utils/classifyPropertyIntent';
 
-const router: Router = Router()
+const router: Router = Router();
 
-// POST /api/indy/generate - Generate or update a block using Indy
+/**
+ * POST /api/indy/generate
+ * Generate block content using Indy
+ */
 router.post('/generate', async (req: Request, res: Response) => {
-  const startTime = Date.now();
   try {
     const { userInput, blockType, currentData, tokens } = req.body;
     
-    // Validate required fields
-    if (!userInput || !blockType) {
-      return res.status(400).json({
-        error: 'userInput and blockType are required'
+    if (!userInput) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'userInput is required' 
       });
     }
-    console.log(`📥 Request validated (${Date.now() - startTime}ms)`);
     
-    // Use AI-driven agent classification instead of hard-coded rules
-    const agentName = classifyIntentToAgent(userInput);
-    console.log(`🎯 Agent selected: ${agentName} (AI-driven classification) (${Date.now() - startTime}ms)`);
+    // TODO: Implement actual AI generation logic here
+    // For now, return a simple response
     
-    // Prepare input for the selected agent
-    console.log(`🔧 Preparing agent input (${Date.now() - startTime}ms)`);
-    let agentInput;
-    
-    // Prepare input based on agent type
-    if (agentName === 'createAgent') {
-      agentInput = {
-        blockType,
-        intent: userInput,
-        tokens: tokens || {}
-      };
-    } else if (agentName === 'updateAgent') {
-      agentInput = {
-        blockType,
-        currentData,
-        intent: userInput,
-        tokens: tokens || {}
-      };
-    } else if (agentName === 'runIndyBlockAgent') {
-      agentInput = {
-        context: {
-          blockType,
-          current: currentData,
-          intent: currentData ? 'update' : 'create'
-        },
-        model: 'gpt-4o',
-        instructions: userInput
-      };
-    } else if (agentName === 'runIndyPageAgent') {
-      agentInput = {
-        context: {
-          blocks: [{ blockType, current: currentData }]
-        },
-        model: 'gpt-4o',
-        goal: userInput
-      };
-    } else if (agentName === 'runIndyExecutionAgent') {
-      agentInput = {
-        blockType,
-        currentData,
-        userInput,
-        tokens: tokens || {}
-      };
-    } else if (agentName === 'runIndyContextAgent') {
-      agentInput = {
-        blockType,
-        props: currentData,
-        schema: null, // Could be added later if needed
-        aiHints: null // Could be added later if needed
-      };
-    } else {
-      // Default fallback for any other agents
-      agentInput = {
-        blockType,
-        currentData,
-        intent: userInput,
-        tokens: tokens || {}
-      };
-    }
-    
-    // Execute the selected agent (SINGLE AI CALL)
-    console.log(`🚀 Calling agent ${agentName} (${Date.now() - startTime}ms)`);
-    const result = await runAgent(agentName, agentInput);
-    console.log(`✅ Agent completed (${Date.now() - startTime}ms)`);
-    
-    // Extract block data based on agent type
-    console.log(`🔍 Extracting block data (${Date.now() - startTime}ms)`);
-    let blockData;
-    if (agentName === 'runIndyContextAgent') {
-      // Context agent returns a string, not block data
-      blockData = { explanation: result };
-    } else if (result.blockData) {
-      blockData = result.blockData;
-    } else if (result.result) {
-      blockData = result.result;
-    } else {
-      blockData = result;
-    }
-    
-    const responseData = {
-      success: result.success !== false,
-      blockData,
-      agentUsed: agentName,
-      userInput,
-      error: result.error,
-      timing: {
-        totalMs: Date.now() - startTime
+    const mockResponse = {
+      success: true,
+      blockData: {
+        elements: {
+          title: {
+            content: `Updated: ${userInput}`,
+            level: 1
+          },
+          subtitle: {
+            content: "This is a mock response from the Indy API"
+          }
+        }
       }
     };
     
-    console.log(`📤 Sending response (${Date.now() - startTime}ms)`);
-    console.log(`📏 Response size: ${JSON.stringify(responseData).length} chars`);
-    
-    // Add timing around JSON serialization
-    const jsonStartTime = Date.now();
-    console.log(`🔧 Starting JSON serialization (${Date.now() - startTime}ms)`);
-    
-    res.json(responseData);
-    
-    console.log(`📡 JSON serialization completed (${Date.now() - jsonStartTime}ms)`);
-    console.log(`✅ Response sent successfully (${Date.now() - startTime}ms)`);
+    res.json(mockResponse);
     
   } catch (error) {
-    res.status(500).json({
-      error: 'Failed to generate block content',
-      details: error instanceof Error ? error.message : 'Unknown error'
+    console.error('Error in Indy generate:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error' 
+    });
+  }
+});
+
+/**
+ * POST /api/indy/test-property-intent
+ * Test property intent classification
+ */
+router.post('/test-property-intent', async (req: Request, res: Response) => {
+  try {
+    const { userInput } = req.body;
+    
+    if (!userInput) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'userInput is required' 
+      });
+    }
+    
+    // Test property intent classification
+    const intents = classifyPropertyIntent(userInput);
+    
+    res.json({
+      success: true,
+      userInput,
+      intents,
+      isPropertyIntent: intents.length > 0 && intents[0].confidence > 0.6
+    });
+    
+  } catch (error) {
+    console.error('Error in property intent test:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error' 
+    });
+  }
+});
+
+/**
+ * POST /api/indy/action
+ * Execute an Indy action
+ */
+router.post('/action', async (req: Request, res: Response) => {
+  try {
+    const { userInput, blockId } = req.body;
+    
+    if (!userInput) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'userInput is required' 
+      });
+    }
+    
+    // Execute the Indy action
+    const action = await runIndyAction(userInput, blockId);
+    
+    res.json({
+      success: true,
+      action
+    });
+    
+  } catch (error) {
+    console.error('Error in Indy action:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Internal server error'
     });
   }
 });

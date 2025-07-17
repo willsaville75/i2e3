@@ -394,6 +394,68 @@ export const gradient = {
     'to-br': 'to bottom right',
     'to-bl': 'to bottom left'
   },
+  tailwind: {
+    // Tailwind gradient direction classes
+    'to-r': 'bg-gradient-to-r',
+    'to-l': 'bg-gradient-to-l',
+    'to-t': 'bg-gradient-to-t',
+    'to-b': 'bg-gradient-to-b',
+    'to-tr': 'bg-gradient-to-tr',
+    'to-tl': 'bg-gradient-to-tl',
+    'to-br': 'bg-gradient-to-br',
+    'to-bl': 'bg-gradient-to-bl'
+  },
+  presets: {
+    // Popular gradient combinations
+    sunset: {
+      name: 'Sunset',
+      fromColor: '#ff7e5f',
+      toColor: '#feb47b',
+      direction: 'to-r'
+    },
+    ocean: {
+      name: 'Ocean',
+      fromColor: '#667eea',
+      toColor: '#764ba2',
+      direction: 'to-r'
+    },
+    purple: {
+      name: 'Purple Dream',
+      fromColor: '#7775D6',
+      toColor: '#E935C1',
+      direction: 'to-r'
+    },
+    forest: {
+      name: 'Forest',
+      fromColor: '#11998e',
+      toColor: '#38ef7d',
+      direction: 'to-r'
+    },
+    fire: {
+      name: 'Fire',
+      fromColor: '#f12711',
+      toColor: '#f5af19',
+      direction: 'to-r'
+    },
+    sky: {
+      name: 'Sky',
+      fromColor: '#0f4c75',
+      toColor: '#3282b8',
+      direction: 'to-r'
+    },
+    rose: {
+      name: 'Rose',
+      fromColor: '#f093fb',
+      toColor: '#f5576c',
+      direction: 'to-r'
+    },
+    mint: {
+      name: 'Mint',
+      fromColor: '#4facfe',
+      toColor: '#00f2fe',
+      direction: 'to-r'
+    }
+  },
   defaults: {
     fromColor: '#7775D6',
     toColor: '#E935C1',
@@ -401,22 +463,37 @@ export const gradient = {
   }
 } as const;
 
-// Gradient utility function
+// Gradient utility functions
 export const createGradientStyle = (gradientConfig: {
   type?: 'linear' | 'radial';
   direction?: keyof typeof gradient.direction;
   fromColor?: string;
   toColor?: string;
+  preset?: keyof typeof gradient.presets;
 }): React.CSSProperties => {
-  const { type = 'linear', direction = 'to-r', fromColor, toColor } = gradientConfig;
+  const { type = 'linear', direction = 'to-r', fromColor, toColor, preset } = gradientConfig;
   
-  const from = fromColor || gradient.defaults.fromColor;
-  const to = toColor || gradient.defaults.toColor;
+  // Use preset if provided, otherwise use custom colors or defaults
+  let from: string;
+  let to: string;
+  let gradientDirection: keyof typeof gradient.direction;
+  
+  if (preset && gradient.presets[preset]) {
+    const presetConfig = gradient.presets[preset];
+    from = presetConfig.fromColor;
+    to = presetConfig.toColor;
+    gradientDirection = presetConfig.direction as keyof typeof gradient.direction;
+  } else {
+    from = fromColor || gradient.defaults.fromColor;
+    to = toColor || gradient.defaults.toColor;
+    gradientDirection = direction;
+  }
+  
+  const directionValue = gradient.direction[gradientDirection] || gradient.direction['to-r'];
   
   if (type === 'linear') {
-    const gradientDirection = gradient.direction[direction] || gradient.direction['to-r'];
     return {
-      background: `linear-gradient(${gradientDirection}, ${from}, ${to})`
+      background: `linear-gradient(${directionValue}, ${from}, ${to})`
     };
   } else if (type === 'radial') {
     return {
@@ -425,6 +502,40 @@ export const createGradientStyle = (gradientConfig: {
   }
   
   return {};
+};
+
+// Helper function to get all gradient preset names
+export const getGradientPresets = () => {
+  return Object.keys(gradient.presets) as (keyof typeof gradient.presets)[];
+};
+
+// Helper function to get gradient preset by name
+export const getGradientPreset = (presetName: keyof typeof gradient.presets) => {
+  return gradient.presets[presetName];
+};
+
+// Helper function to create Tailwind gradient classes
+export const createTailwindGradient = (config: {
+  direction?: keyof typeof gradient.direction;
+  fromColor?: string;
+  toColor?: string;
+  preset?: keyof typeof gradient.presets;
+}): string => {
+  const { direction = 'to-r', fromColor, toColor, preset } = config;
+  
+  // Use preset if provided
+  if (preset && gradient.presets[preset]) {
+    const presetConfig = gradient.presets[preset];
+    const directionClass = gradient.tailwind[presetConfig.direction as keyof typeof gradient.tailwind] || gradient.tailwind['to-r'];
+    return `${directionClass} from-[${presetConfig.fromColor}] to-[${presetConfig.toColor}]`;
+  }
+  
+  // Use custom colors or defaults
+  const from = fromColor || gradient.defaults.fromColor;
+  const to = toColor || gradient.defaults.toColor;
+  const directionClass = gradient.tailwind[direction] || gradient.tailwind['to-r'];
+  
+  return `${directionClass} from-[${from}] to-[${to}]`;
 };
 
 
@@ -446,7 +557,8 @@ export type FontWeightToken = keyof typeof typography.weight;
 export type ColorSchemeToken = keyof typeof colors.scheme;
 export type TextColorToken = keyof typeof typography.color;
 export type BorderRadiusToken = keyof typeof borders.radius;
-export type GradientDirectionToken = keyof typeof gradient.direction; 
+export type GradientDirectionToken = keyof typeof gradient.direction;
+export type GradientPresetToken = keyof typeof gradient.presets;
 export type AlignToken = keyof typeof alignment.text;
 export type ImagePositionToken = keyof typeof image.position;
 export type ImageSizeToken = keyof typeof image.size;

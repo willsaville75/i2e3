@@ -22,7 +22,7 @@ export interface ContextAgentInput {
  * @returns Markdown-formatted string explaining the block
  */
 export default async function run(input: ContextAgentInput): Promise<string> {
-  const { blockType, props, schema, aiHints } = input;
+  const { blockType, props, aiHints } = input;
   
   // Generate block overview
   const overview = generateBlockOverview(blockType, props);
@@ -149,18 +149,4 @@ function generateDesignIntent(aiHints?: { description?: string; [key: string]: a
   return aiHints.description;
 }
 
-/**
- * Identifies missing or incomplete fields
- */
-function identifyMissingFields(props: any, blockType: string): string[] {
-  const missing = [];
-  
-  if (blockType === 'hero') {
-    if (!props?.elements?.title?.content) missing.push('title');
-    if (!props?.elements?.subtitle?.content) missing.push('subtitle');
-    if (!props?.elements?.button?.text) missing.push('button text');
-    if (!props?.elements?.button?.href) missing.push('button link');
-  }
-  
-  return missing;
-} 
+ 

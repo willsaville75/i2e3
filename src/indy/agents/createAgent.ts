@@ -57,9 +57,13 @@ Return ONLY valid JSON in this EXACT format:
 BACKGROUND RULES:
 - For solid colors: { "type": "color", "color": "blue", "colorIntensity": "medium" }
 - For gradients: { "type": "gradient", "gradient": "preset_name", "colorIntensity": "medium" }
+- For images: { "type": "image", "image": { "url": "image_url", "position": "center", "size": "cover" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.4 } }
+- For videos: { "type": "video", "video": { "url": "video_url", "poster": "poster_image_url" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.3 } }
 - Available gradient presets: "sunset", "ocean", "purple", "forest", "fire", "sky", "rose", "mint"
+- Image positions: "center", "top", "bottom", "left", "right"
+- Image sizes: "cover", "contain", "auto"
 - If user mentions specific gradient colors, use the closest preset name
-- Examples: "sunset gradient" → "gradient": "sunset", "mint background" → "gradient": "mint"
+- Examples: "sunset gradient" → "gradient": "sunset", "hero with mountain image" → "type": "image"
 
 Make the content engaging and relevant to: "${userMessage}". No explanations, just JSON.`;
 

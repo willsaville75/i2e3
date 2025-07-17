@@ -81,8 +81,11 @@ For example:
 - If updating "elements.button.text", return just: "New Button Text"
 - If updating "background.color", return just: "purple"
 
-BACKGROUND GRADIENT RULES:
-- For gradients, use this format: { "type": "gradient", "gradient": "preset_name", "colorIntensity": "medium" }
+BACKGROUND RULES:
+- For colors: { "type": "color", "color": "blue", "colorIntensity": "medium" }
+- For gradients: { "type": "gradient", "gradient": "preset_name", "colorIntensity": "medium" }
+- For images: { "type": "image", "image": { "url": "image_url", "position": "center", "size": "cover" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.4 } }
+- For videos: { "type": "video", "video": { "url": "video_url", "poster": "poster_image_url" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.3 } }
 - Available gradient presets: "sunset", "ocean", "purple", "forest", "fire", "sky", "rose", "mint"
 - Examples: "sunset gradient" → { "type": "gradient", "gradient": "sunset", "colorIntensity": "medium" }
 

@@ -4,19 +4,19 @@
  * This agent handles property-specific updates using the intent classification system
  * It bridges the gap between user intent and actual property changes
  * 
- * IMPORTANT: Uses blockStore as single source of truth
- * Database save happens when "Done" is clicked in EditModeProvider
+ * IMPORTANT: Uses blockStore as single source of truth when called from frontend
+ * When called from API, returns updated data for frontend to apply
  */
 
 import { classifyPropertyIntent, convertIntentToPropertyUpdate, PropertyIntent } from '../utils/classifyPropertyIntent';
 import { getNestedValue, setNestedValue } from '../../blocks/shared/property-mappings';
-import { useBlocksStore } from '../../store/blocksStore';
 
 export interface PropertyAgentResult {
   success: boolean;
   changes: PropertyChange[];
   message: string;
   confidence: number;
+  updatedBlockData?: any; // For API calls
 }
 
 export interface PropertyChange {
@@ -29,13 +29,14 @@ export interface PropertyChange {
 /**
  * Run the property agent to handle property-specific updates
  * 
- * IMPORTANT: This updates the blockStore immediately
- * Database persistence happens when "Done" is clicked
+ * IMPORTANT: This updates the blockStore immediately when called from frontend
+ * When called from API, returns updated data for frontend to apply
  */
 export async function runIndyPropertyAgent(
   userInput: string,
   blockId: string,
-  currentBlockData: any
+  currentBlockData: any,
+  updateStore: boolean = true
 ): Promise<PropertyAgentResult> {
   try {
     console.log('🔧 Property Agent: Analyzing user input:', userInput);
@@ -83,15 +84,18 @@ export async function runIndyPropertyAgent(
     // Apply changes to the block data
     const updatedBlockData = applyPropertyChanges(currentBlockData, changes);
     
-    // Update the blockStore (single source of truth)
-    const { updateBlock, getBlockIndex } = useBlocksStore.getState();
-    const blockIndex = getBlockIndex(blockId);
-    
-    if (blockIndex !== -1) {
-      updateBlock(blockIndex, updatedBlockData);
-      console.log('✅ Property Agent: Successfully updated block in store');
-    } else {
-      throw new Error(`Block with id ${blockId} not found in store`);
+    if (updateStore) {
+      // Update the blockStore (when called from frontend)
+      const { useBlocksStore } = await import('../../store/blocksStore');
+      const { updateBlock, getBlockIndex } = useBlocksStore.getState();
+      const blockIndex = getBlockIndex(blockId);
+      
+      if (blockIndex !== -1) {
+        updateBlock(blockIndex, updatedBlockData);
+        console.log('✅ Property Agent: Successfully updated block in store');
+      } else {
+        throw new Error(`Block with id ${blockId} not found in store`);
+      }
     }
     
     // Generate success message
@@ -101,7 +105,8 @@ export async function runIndyPropertyAgent(
       success: true,
       changes,
       message,
-      confidence: primaryIntent.confidence
+      confidence: primaryIntent.confidence,
+      updatedBlockData // Return data for API calls
     };
     
   } catch (error) {

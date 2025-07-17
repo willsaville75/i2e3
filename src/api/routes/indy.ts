@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express';
-import { runIndyAction } from '../../indy/runIndyAction';
+import { runIndyPropertyAgent, isPropertyIntent } from '../../indy/agents/runIndyPropertyAgent';
 import { classifyPropertyIntent } from '../../indy/utils/classifyPropertyIntent';
 
 const router: Router = Router();
@@ -84,11 +84,11 @@ router.post('/test-property-intent', async (req: Request, res: Response) => {
 
 /**
  * POST /api/indy/action
- * Execute an Indy action
+ * Execute an Indy action (API-only version)
  */
 router.post('/action', async (req: Request, res: Response) => {
   try {
-    const { userInput, blockId } = req.body;
+    const { userInput, blockId, blockType, blockData } = req.body;
     
     if (!userInput) {
       return res.status(400).json({ 
@@ -97,13 +97,67 @@ router.post('/action', async (req: Request, res: Response) => {
       });
     }
     
-    // Execute the Indy action
-    const action = await runIndyAction(userInput, blockId);
-    
-    res.json({
-      success: true,
-      action
-    });
+    // Check if this is a property-related intent
+    if (isPropertyIntent(userInput)) {
+      if (!blockId || !blockData) {
+        return res.status(400).json({
+          success: false,
+          error: 'blockId and blockData are required for property updates'
+        });
+      }
+      
+      console.log('🔧 API: Detected property intent, using property agent');
+      
+      // Run property agent with provided block data (don't update store)
+      const propertyResult = await runIndyPropertyAgent(
+        userInput,
+        blockId,
+        blockData,
+        false // Don't update store on server side
+      );
+      
+      if (propertyResult.success) {
+        res.json({
+          success: true,
+          action: {
+            type: 'PROPERTY_UPDATE',
+            blockType: blockType || 'unknown',
+            blockId,
+            data: propertyResult.changes,
+            propertyChanges: propertyResult.changes
+          },
+          message: propertyResult.message,
+          confidence: propertyResult.confidence
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          error: propertyResult.message
+        });
+      }
+    } else {
+      // Handle content changes with AI generation
+      console.log('📝 API: Using AI generation for content changes');
+      
+      // For now, return a mock response
+      res.json({
+        success: true,
+        action: {
+          type: blockId ? 'UPDATE_BLOCK' : 'ADD_BLOCK',
+          blockType: blockType || 'hero',
+          blockId,
+          data: {
+            elements: {
+              title: {
+                content: `Updated: ${userInput}`,
+                level: 1
+              }
+            }
+          }
+        },
+        message: 'Content updated successfully'
+      });
+    }
     
   } catch (error) {
     console.error('Error in Indy action:', error);

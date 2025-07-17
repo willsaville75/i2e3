@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useBlocksStore } from '../store/blocksStore';
+import { setNestedValue } from '../blocks/shared/property-mappings';
 
 /**
  * Indy Chat Panel Component
@@ -36,7 +37,7 @@ export const IndyChatPanel: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { selectedIndex, blocks } = useBlocksStore();
+  const { selectedIndex, blocks, updateBlock } = useBlocksStore();
   
   const selectedBlock = selectedIndex !== null ? blocks[selectedIndex] : null;
 
@@ -73,7 +74,9 @@ export const IndyChatPanel: React.FC = () => {
         },
         body: JSON.stringify({
           userInput: userMessage,
-          blockId: selectedBlock?.id
+          blockId: selectedBlock?.id,
+          blockType: selectedBlock?.blockType,
+          blockData: selectedBlock?.blockData
         })
       });
 
@@ -102,8 +105,16 @@ export const IndyChatPanel: React.FC = () => {
             confidence = 0.9;
           }
           
-          // Refresh the page to show changes (since we're not using the store directly)
-          window.location.reload();
+          // Apply the property changes to the blockStore for live preview
+          if (result.action.data && selectedBlock && selectedIndex !== null) {
+            // Apply the changes to get updated block data
+            let updatedBlockData = JSON.parse(JSON.stringify(selectedBlock.blockData));
+            for (const change of changes) {
+              setNestedValue(updatedBlockData, change.property, change.newValue);
+            }
+            
+            updateBlock(selectedIndex, updatedBlockData);
+          }
         } else {
           // Handle content updates
           assistantMessage = '✅ Content updated successfully!';

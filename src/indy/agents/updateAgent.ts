@@ -81,13 +81,18 @@ For example:
 - If updating "elements.button.text", return just: "New Button Text"
 - If updating "background.color", return just: "purple"
 
-BACKGROUND RULES:
+BACKGROUND RULES - COMPLETE REPLACEMENT:
+When changing background types, return the COMPLETE new background object:
 - For colors: { "type": "color", "color": "blue", "colorIntensity": "medium" }
 - For gradients: { "type": "gradient", "gradient": "preset_name", "colorIntensity": "medium" }
 - For images: { "type": "image", "image": { "url": "image_url", "position": "center", "size": "cover" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.4 } }
 - For videos: { "type": "video", "video": { "url": "video_url", "poster": "poster_image_url" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.3 } }
 - Available gradient presets: "sunset", "ocean", "purple", "forest", "fire", "sky", "rose", "mint"
-- Examples: "sunset gradient" → { "type": "gradient", "gradient": "sunset", "colorIntensity": "medium" }
+- CRITICAL: When user wants to change background type (color→image, gradient→video, etc), return the ENTIRE new background object
+- Examples: 
+  - "sunset gradient" → { "type": "gradient", "gradient": "sunset", "colorIntensity": "medium" }
+  - "change to mountain image" → { "type": "image", "image": { "url": "https://example.com/mountain.jpg", "position": "center", "size": "cover" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.4 } }
+  - "add video background" → { "type": "video", "video": { "url": "https://example.com/video.mp4", "poster": "https://example.com/poster.jpg" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.3 } }
 
 Important:
 - Return ONLY the direct value that should replace the current value at "${target}"

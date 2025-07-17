@@ -43,13 +43,22 @@ export function extractTargetFromIntent(intent: string, blockType: string): stri
     
     // Background related
     if (lowerIntent.match(/\b(background|bg|backdrop)\b/)) {
-      if (lowerIntent.match(/\b(color|colour)\b/)) {
+      // Check for background type changes (return full background for replacement)
+      if (lowerIntent.match(/\b(change|replace|switch|to)\b.*\b(image|picture|photo)\b/) ||
+          lowerIntent.match(/\b(change|replace|switch|to)\b.*\b(video|clip|footage)\b/) ||
+          lowerIntent.match(/\b(change|replace|switch|to)\b.*\b(gradient)\b/) ||
+          lowerIntent.match(/\b(change|replace|switch|to)\b.*\b(color|colour)\b/)) {
+        return 'background';
+      }
+      
+      // Specific property updates (for minor tweaks, not type changes)
+      if (lowerIntent.match(/\b(color|colour)\b/) && !lowerIntent.match(/\b(change|replace|switch|to)\b/)) {
         return 'background.color';
       }
-      if (lowerIntent.match(/\b(image|picture|photo)\b/)) {
+      if (lowerIntent.match(/\b(image|picture|photo)\b/) && !lowerIntent.match(/\b(change|replace|switch|to)\b/)) {
         return 'background.image';
       }
-      if (lowerIntent.match(/\b(gradient)\b/)) {
+      if (lowerIntent.match(/\b(gradient)\b/) && !lowerIntent.match(/\b(change|replace|switch|to)\b/)) {
         return 'background.gradient';
       }
       return 'background';

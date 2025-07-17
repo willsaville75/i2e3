@@ -81,6 +81,11 @@ For example:
 - If updating "elements.button.text", return just: "New Button Text"
 - If updating "background.color", return just: "purple"
 
+BACKGROUND GRADIENT RULES:
+- For gradients, use this format: { "type": "gradient", "gradient": "preset_name", "colorIntensity": "medium" }
+- Available gradient presets: "sunset", "ocean", "purple", "forest", "fire", "sky", "rose", "mint"
+- Examples: "sunset gradient" → { "type": "gradient", "gradient": "sunset", "colorIntensity": "medium" }
+
 Important:
 - Return ONLY the direct value that should replace the current value at "${target}"
 - Do NOT wrap it in the path structure

@@ -54,6 +54,13 @@ Return ONLY valid JSON in this EXACT format:
   "background": { "type": "color", "color": "blue", "colorIntensity": "medium" }
 }
 
+BACKGROUND RULES:
+- For solid colors: { "type": "color", "color": "blue", "colorIntensity": "medium" }
+- For gradients: { "type": "gradient", "gradient": "preset_name", "colorIntensity": "medium" }
+- Available gradient presets: "sunset", "ocean", "purple", "forest", "fire", "sky", "rose", "mint"
+- If user mentions specific gradient colors, use the closest preset name
+- Examples: "sunset gradient" → "gradient": "sunset", "mint background" → "gradient": "mint"
+
 Make the content engaging and relevant to: "${userMessage}". No explanations, just JSON.`;
 
       // Call AI with optimized parameters

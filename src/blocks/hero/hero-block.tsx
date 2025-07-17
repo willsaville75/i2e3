@@ -152,14 +152,6 @@ export const HeroBlock: React.FC<HeroProps> = ({
           preset: background.gradient as keyof typeof gradient.presets
         });
       }
-      
-      // Handle AI-generated format: background.color with preset name
-      if (background.color && background.color in gradient.presets) {
-        return createGradientStyle({
-          type: 'linear',
-          preset: background.color as keyof typeof gradient.presets
-        });
-      }
     }
     return {};
   };

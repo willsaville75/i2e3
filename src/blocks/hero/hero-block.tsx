@@ -41,104 +41,43 @@ export const HeroBlock: React.FC<HeroProps> = ({
   const marginTop = blockSettings.margin?.top;
   const marginBottom = blockSettings.margin?.bottom;
   
-  // Height setting
-  const height = blockSettings.height;
+  // Get responsive container classes
+  const containerClasses = getResponsiveContainerClasses({
+    contentWidth: contentWidth as 'narrow' | 'wide' | 'full' | undefined
+  });
   
-  // Get background class using token system
-  const getBackgroundClass = () => {
-    if (!background || !background.type) {
-      return colors.scheme.neutral['900']; // Default dark background for hero
-    }
-    
-    if (background.type !== 'color') {
-      return ''; // No background color for image/video/gradient
-    }
-    
-    const { color, colorIntensity = 'dark' } = background;
-    
-    // If no color specified, default to dark gray
-    if (!color) {
-      return colors.scheme.neutral['900'];
-    }
-    
-    // Map intensity using centralized token
-    const mappedIntensity = colors.intensity[colorIntensity as keyof typeof colors.intensity];
-    
-    // Use color scheme for class lookup
-    const colorClass = colors.scheme[color as keyof typeof colors.scheme]?.[mappedIntensity];
-    if (colorClass) {
-      return colorClass;
-    }
-    // Fallback to neutral dark
-    return colors.scheme.neutral['800'];
-  };
-  
-  // Get background style using shared gradient utilities
+  // Get background style and class
   const getBackgroundStyle = () => {
-    if (background?.type === 'gradient') {
-      // Handle schema-compliant format: background.gradient object with fromColor/toColor
-      if (background.gradient && typeof background.gradient === 'object' && background.gradient.fromColor) {
-        return createGradientStyle({
-          type: 'linear',
-          direction: (background.gradient.direction && background.gradient.direction in gradient.direction) 
-            ? background.gradient.direction as keyof typeof gradient.direction 
-            : 'to-r',
-          fromColor: background.gradient.fromColor,
-          toColor: background.gradient.toColor
-        });
-      }
-      
-      // Handle AI-generated format: background.gradient with preset name (string)
-      if (background.gradient && typeof background.gradient === 'string' && background.gradient in gradient.presets) {
-        return createGradientStyle({
-          type: 'linear',
-          preset: background.gradient as keyof typeof gradient.presets
-        });
-      }
+    if (background.type === 'gradient') {
+      const gradientType = background.gradient || 'sunset';
+      return createGradientStyle({ preset: gradientType as keyof typeof gradient.presets });
     }
+    
+    if (background.type === 'image' && background.image?.url) {
+      return {
+        backgroundImage: `url(${background.image.url})`,
+        backgroundSize: image.size[background.image.size as keyof typeof image.size] || image.size.cover,
+        backgroundPosition: image.position[background.image.position as keyof typeof image.position] || image.position.center,
+        backgroundRepeat: 'no-repeat'
+      };
+    }
+    
     return {};
   };
-  
-  // Render background media
-  const renderBackgroundMedia = () => {
-    if (background?.type === 'video' && background.video?.url) {
-      return (
-        <video
-          className="absolute inset-0 w-full h-full object-cover"
-          src={background.video.url}
-          poster={background.video.poster}
-          autoPlay
-          muted
-          loop
-          playsInline
-          aria-hidden="true"
-          data-testid="hero-background-video"
-        />
-      );
+
+  const getBackgroundClass = () => {
+    if (background.type === 'color') {
+      const colorScheme = background.color || 'blue';
+      const intensity = background.colorIntensity || 'medium';
+      return colors.scheme[colorScheme as keyof typeof colors.scheme]?.[colors.intensity[intensity as keyof typeof colors.intensity]] || colors.scheme.blue['500'];
     }
     
-    if (background?.type === 'image' && background.image?.url) {
-      const position = background.image.position ? image.position[background.image.position as keyof typeof image.position] : undefined;
-      const size = background.image.size ? image.size[background.image.size as keyof typeof image.size] : undefined;
-      
-      return (
-        <img
-          className={`absolute inset-0 w-full h-full ${size} ${position}`}
-          src={background.image.url}
-          alt=""
-          aria-hidden="true"
-        />
-      );
-    }
-    
-    return null;
+    return '';
   };
-  
-  // Render overlay using token system
-  const renderOverlay = () => {
-    if (!background?.overlay?.enabled || (background.type !== 'image' && background.type !== 'video')) {
-      return null;
-    }
+
+  // Background overlay component
+  const BackgroundOverlay = () => {
+    if (!background.overlay?.enabled) return null;
     
     const overlayColor = background.overlay.color;
     const opacity = background.overlay.opacity;
@@ -171,10 +110,7 @@ export const HeroBlock: React.FC<HeroProps> = ({
       />
     );
   };
-  
-  // Use token system for text alignment
-  const getTextAlignClass = () => textAlignment ? alignment.text[textAlignment as keyof typeof alignment.text] : undefined;
-  
+
   // Get text color using token system
   const getTextColorClass = (color?: string) => {
     // First check if it's a semantic color from typography.color
@@ -194,45 +130,69 @@ export const HeroBlock: React.FC<HeroProps> = ({
       return typography.color.inverse;
     }
     
-    // For light backgrounds, use appropriate text color
+    // For light backgrounds, use primary text
     return typography.color.primary;
   };
 
-  // Button size mapping - removed unused variable
+  // Get proper hero title size using token system
+  const getHeroTitleSize = (): keyof typeof typography.size => {
+    // Hero titles should be large - use 5xl for desktop, 4xl for mobile
+    return '5xl';
+  };
 
-  // Get responsive container classes
-  const containerClasses = getResponsiveContainerClasses({
-    fullWidth: blockSettings.blockWidth,
-    contentWidth: contentWidth as "narrow" | "wide" | "full" | undefined
-  });
+  // Get proper hero subtitle size using token system
+  const getHeroSubtitleSize = (): keyof typeof typography.size => {
+    // Hero subtitles should be medium-large - use xl
+    return 'xl';
+  };
+
+  // Get proper spacing using token system
+  const getTitleBottomMargin = (): keyof typeof spacing.margin.bottom => {
+    return 'md';
+  };
+
+  const getSubtitleBottomMargin = (): keyof typeof spacing.margin.bottom => {
+    return 'lg';
+  };
 
   return (
-    <section className={clsx(
-      'hero-block relative',
-      getBackgroundClass(),
-      height && sizing.height[height as keyof typeof sizing.height],
-      'flex',
-      horizontalAlign && alignment.horizontal[horizontalAlign as keyof typeof alignment.horizontal],
-      verticalAlign && alignment.vertical[verticalAlign as keyof typeof alignment.vertical],
-      marginTop && spacing.margin.top[marginTop as keyof typeof spacing.margin.top],
-      marginBottom && spacing.margin.bottom[marginBottom as keyof typeof spacing.margin.bottom],
-      containerClasses
-    )}
+    <section 
+      className={clsx(
+        'relative flex items-center justify-center',
+        sizing.height[blockSettings.height as keyof typeof sizing.height] || sizing.height.screen,
+        marginTop && spacing.margin.top[marginTop as keyof typeof spacing.margin.top],
+        marginBottom && spacing.margin.bottom[marginBottom as keyof typeof spacing.margin.bottom],
+        getBackgroundClass()
+      )}
       style={getBackgroundStyle()}
     >
-      {/* Background media (image/video) */}
-      {renderBackgroundMedia()}
+      {/* Background Video */}
+      {background.type === 'video' && background.video?.url && (
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          poster={background.video.poster}
+        >
+          <source src={background.video.url} type="video/mp4" />
+        </video>
+      )}
       
-      {/* Overlay */}
-      {renderOverlay()}
+      {/* Background Overlay */}
+      <BackgroundOverlay />
       
-      {/* Content container */}
+      {/* Content */}
       <div className={clsx('relative z-10 w-full', containerClasses)}>
         <div className={clsx(
-          'max-w-4xl mx-auto px-4 sm:px-6 lg:px-8',
+          'max-w-4xl mx-auto',
+          spacing.padding.responsive.base,
+          spacing.padding.responsive.sm,
+          spacing.padding.responsive.lg,
           topPadding && `py-${spacing.map[topPadding as keyof typeof spacing.map]}`,
           bottomPadding && `sm:py-${spacing.map[bottomPadding as keyof typeof spacing.map]}`,
-          getTextAlignClass()
+          textAlignment && alignment.text[textAlignment as keyof typeof alignment.text]
         )}>
           {/* Title */}
           {elements.title?.content && (
@@ -242,12 +202,13 @@ export const HeroBlock: React.FC<HeroProps> = ({
                 props: {
                   content: elements.title.content,
                   level: elements.title.level,
-                  size: 'text-4xl md:text-6xl',
-                  weight: 'font-extrabold',
-                  color: getTextColorClass('white'),
-                  className: 'mb-4'
+                  size: getHeroTitleSize(),
+                  weight: 'extrabold',
+                  color: getTextColorClass(),
+                  align: textAlignment as keyof typeof alignment.text || 'center'
                 }
               }}
+              className={spacing.margin.bottom[getTitleBottomMargin()]}
             />
           )}
           
@@ -258,12 +219,13 @@ export const HeroBlock: React.FC<HeroProps> = ({
                 type: 'text',
                 props: {
                   content: elements.subtitle.content,
-                  size: 'text-xl md:text-2xl',
-                  weight: 'font-medium',
-                  color: getTextColorClass('white'),
-                  className: 'mb-8'
+                  size: getHeroSubtitleSize(),
+                  weight: 'medium',
+                  color: getTextColorClass(),
+                  align: textAlignment as keyof typeof alignment.text || 'center'
                 }
               }}
+              className={spacing.margin.bottom[getSubtitleBottomMargin()]}
             />
           )}
           
@@ -275,8 +237,8 @@ export const HeroBlock: React.FC<HeroProps> = ({
                 props: {
                   text: elements.button.text,
                   href: elements.button.href,
-                  variant: elements.button.variant,
-                  size: elements.button.size
+                  variant: elements.button.variant || 'primary',
+                  size: elements.button.size || 'lg'
                 }
               }}
             />

@@ -88,48 +88,57 @@ export const IndyChatPanel: React.FC = () => {
         { role: 'user', content: userMessage }
       ];
 
-      // Add current block context if available
-      const contextMessages = [...newHistory];
+      // Trim chat history to prevent token overload
+      const trimmedHistory = trimChatHistory(newHistory, MAX_CONVERSATION_TURNS);
+      
+      // Prepare context message about the selected block
+      let contextMessage;
       if (selectedIndex !== null && blocks[selectedIndex]) {
-        const currentBlock = blocks[selectedIndex];
-        const blockEntry = blockRegistry[currentBlock.blockType];
+        const selectedBlock = blocks[selectedIndex];
+        const blockEntry = blockRegistry[selectedBlock.blockType];
         
         if (blockEntry && blockEntry.schema) {
-          const blockSummary = summariseBlockSchemaForAI(blockEntry.schema, {
+          const schemaSummary = summariseBlockSchemaForAI(blockEntry.schema, {
             includeHints: true,
             includeDefaults: true,
             includeEnums: true
           });
           
-          const currentDataSummary = JSON.stringify(currentBlock.blockData, null, 2);
+          const currentDataSummary = JSON.stringify(selectedBlock.blockData, null, 2);
           
-          contextMessages.push({
+          contextMessage = {
             role: 'system',
-            content: `Current block is of type "${currentBlock.blockType}".
+            content: `You are editing a "${selectedBlock.blockType}" block at index ${selectedIndex}.
 
-Schema: ${blockSummary}
+Schema: ${schemaSummary}
 
 Current Data: ${currentDataSummary}
 
-Context: Currently selected block: ${currentBlock.blockType} at index ${selectedIndex}
-
 You can manipulate blocks using the provided functions. When users ask to modify content, use updateBlock. When they want to add new sections, use addBlock. When they want to remove content, use deleteBlock. When they want to save changes, use savePage.`
-          });
+          };
+        } else {
+          contextMessage = {
+            role: 'system',
+            content: `You are editing a "${selectedBlock.blockType}" block at index ${selectedIndex}. You can manipulate blocks using the provided functions.`
+          };
         }
       } else {
-        contextMessages.push({
+        contextMessage = {
           role: 'system',
-          content: `Context: No block selected. Available blocks: ${blocks.map((b, i) => `${i}: ${b.blockType}`).join(', ')}
+          content: `No block selected. Available blocks: ${blocks.map((b, i) => `${i}: ${b.blockType}`).join(', ')}
 
 You can manipulate blocks using the provided functions. When users ask to modify content, use updateBlock. When they want to add new sections, use addBlock. When they want to remove content, use deleteBlock. When they want to save changes, use savePage.`
-        });
+        };
       }
+
+      // Combine context message with trimmed history
+      const finalMessages = [contextMessage, ...trimmedHistory];
 
       // Call OpenAI with function calling
       const client = await createOpenAIClient();
       const response = await client.chat.completions.create({
         model: "gpt-4-0613",
-        messages: contextMessages,
+        messages: finalMessages,
         functions: functionDefinitions,
         function_call: "auto",
         temperature: 0.7,

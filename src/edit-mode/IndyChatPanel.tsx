@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useBlocksStore } from '../store/blocksStore';
-import { setNestedValue } from '../blocks/shared/property-mappings';
+import { handleIndyRequest } from '../ai/handleIndyRequest';
 
 /**
  * Indy Chat Panel Component
@@ -37,7 +37,7 @@ export const IndyChatPanel: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { selectedIndex, blocks, updateBlock } = useBlocksStore();
+  const { selectedIndex, blocks } = useBlocksStore();
   
   const selectedBlock = selectedIndex !== null ? blocks[selectedIndex] : null;
 
@@ -66,90 +66,17 @@ export const IndyChatPanel: React.FC = () => {
     setMessages(prev => [...prev, userMessageObj]);
 
     try {
-      // Call the API instead of running the action directly
-      const response = await fetch('/api/indy/action', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userInput: userMessage,
-          blockId: selectedBlock?.id,
-          blockType: selectedBlock?.blockType,
-          blockData: selectedBlock?.blockData
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to process request');
-      }
-
-      const result = await response.json();
+      // Use the new handleIndyRequest function with OpenAI function calling
+      const reply = await handleIndyRequest(userMessage, selectedIndex);
       
-      let assistantMessage: string;
-      let confidence: number = 0;
-
-      if (result.success) {
-        const action = result.action;
-        
-        // Handle AI-first response format from orchestrator
-        if (action.type === 'CONTEXT_EXPLANATION') {
-          // Handle context explanation from context agent
-          assistantMessage = action.explanation || result.message || 'Here\'s what I know about this block.';
-          confidence = result.confidence || 1.0;
-        } else if (action.type === 'UPDATE_BLOCK' && action.data) {
-          // Apply the updated block data directly from AI
-          if (selectedBlock && selectedIndex !== null) {
-            updateBlock(selectedIndex, action.data);
-            console.log('✅ IndyChatPanel: Applied AI-generated block update', selectedIndex);
-            assistantMessage = result.message || '✅ Content updated successfully!';
-            confidence = result.confidence || 0.9;
-          } else {
-            assistantMessage = '⚠️ Please select a block first, then I can make changes to it.';
-            confidence = 0.8;
-          }
-        } else if (action.type === 'PROPERTY_UPDATE') {
-          // Handle legacy property updates (for backward compatibility)
-          const changes = action.propertyChanges || [];
-          if (changes.length === 1) {
-            const change = changes[0];
-            assistantMessage = `✅ Updated ${getPropertyDisplayName(change.property)} to "${change.newValue}"`;
-            confidence = change.intent?.confidence || 0.9;
-          } else {
-            assistantMessage = `✅ Updated ${changes.length} properties successfully`;
-            confidence = 0.9;
-          }
-          
-          // Apply the property changes to the blockStore for live preview
-          if (result.action.data && selectedBlock && selectedIndex !== null) {
-            let updatedBlockData = JSON.parse(JSON.stringify(selectedBlock.blockData));
-            
-            for (const change of changes) {
-              setNestedValue(updatedBlockData, change.property, change.newValue);
-            }
-            
-            updateBlock(selectedIndex, updatedBlockData);
-            console.log('✅ IndyChatPanel: Applied property changes to block', selectedIndex);
-          }
-        } else {
-          // Handle other action types
-          assistantMessage = result.message || '✅ Content updated successfully!';
-          confidence = result.confidence || 0.8;
-        }
-      } else {
-        assistantMessage = '❌ Sorry, I couldn\'t complete that request. Please try rephrasing or be more specific.';
-      }
-
       // Add assistant response
       const assistantMessageObj: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: assistantMessage,
+        content: reply,
         timestamp: new Date(),
         metadata: {
-          action: result.action,
-          confidence
+          confidence: 0.9 // Default confidence for function calling responses
         }
       };
       setMessages(prev => [...prev, assistantMessageObj]);
@@ -271,25 +198,3 @@ export const IndyChatPanel: React.FC = () => {
   );
 };
 
-/**
- * Get display name for property
- */
-function getPropertyDisplayName(property: string): string {
-  const parts = property.split('.');
-  const lastPart = parts[parts.length - 1];
-  
-  const displayNames: Record<string, string> = {
-    'blockWidth': 'block width',
-    'height': 'block height',
-    'contentWidth': 'content width',
-    'textAlignment': 'text alignment',
-    'top': 'top spacing',
-    'bottom': 'bottom spacing',
-    'left': 'left spacing',
-    'right': 'right spacing',
-    'color': 'background color',
-    'gradient': 'background gradient'
-  };
-  
-  return displayNames[lastPart] || lastPart;
-}

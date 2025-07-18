@@ -93,6 +93,15 @@ function quickKeywordClassify(
     };
   }
   
+  // Canvas-specific questions
+  if (text.includes('canvas') || text.includes('page') || text.includes('all blocks')) {
+    return {
+      agent: 'runIndyContextAgent',
+      confidence: 0.9,
+      reasoning: 'Canvas/page question'
+    };
+  }
+  
   // Greeting patterns
   if (text.match(/^(hi|hello|hey|good\s+(morning|afternoon|evening))/i)) {
     return {

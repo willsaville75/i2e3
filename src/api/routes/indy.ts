@@ -11,12 +11,12 @@ const router: Router = Router();
 router.post('/generate', async (req: Request, res: Response) => {
   const startTime = Date.now();
   try {
-    const { userInput, blockType, currentData, tokens } = req.body;
+    const { userInput, blockType, currentData, tokens, canvasContext } = req.body;
     
     // Validate required fields
-    if (!userInput || !blockType) {
+    if (!userInput) {
       return res.status(400).json({
-        error: 'userInput and blockType are required'
+        error: 'userInput is required'
       });
     }
     console.log(`📥 Request validated (${Date.now() - startTime}ms)`);
@@ -74,7 +74,8 @@ router.post('/generate', async (req: Request, res: Response) => {
         blockType,
         props: currentData,
         schema: null,
-        aiHints: null
+        aiHints: null,
+        canvasContext: canvasContext || null
       };
     } else {
       // Default fallback for any other agents

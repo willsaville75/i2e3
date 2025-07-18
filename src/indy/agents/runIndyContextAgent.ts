@@ -13,6 +13,14 @@ export interface ContextAgentInput {
     description?: string;
     [key: string]: any;
   };
+  // Canvas context
+  canvasContext?: {
+    totalBlocks: number;
+    blockTypes: string[];
+    currentBlockIndex?: number;
+    pageTitle?: string;
+    pageDescription?: string;
+  };
 }
 
 /**
@@ -22,16 +30,24 @@ export interface ContextAgentInput {
  * @returns Markdown-formatted string explaining the block
  */
 export default async function run(input: ContextAgentInput): Promise<string> {
-  const { blockType, props, aiHints } = input;
+  const { blockType, props, aiHints, canvasContext } = input;
   
   // Handle case where no block is selected
-  if (!blockType) {
+  if (!blockType && !canvasContext) {
     return `### No Block Selected
 
 Please select a block first, then I can tell you about its context, current values, and design intent.
 
 To select a block, click on any block in the canvas on the left side of the screen.`;
   }
+  
+  // If we have canvas context but no specific block, show canvas overview
+  if (!blockType && canvasContext) {
+    return generateCanvasOverview(canvasContext);
+  }
+  
+  // Generate canvas context if available
+  const canvasOverview = canvasContext ? generateCanvasContext(canvasContext, blockType) : '';
   
   // Generate block overview
   const overview = generateBlockOverview(blockType, props);
@@ -44,6 +60,7 @@ To select a block, click on any block in the canvas on the left side of the scre
   
   // Combine into markdown format
   const sections = [
+    canvasOverview,
     `### Block Overview`,
     overview,
     ``,
@@ -104,8 +121,10 @@ function generateCurrentValues(props: any): string {
     const { title, subtitle, button } = props.elements;
     
     values.push(`**📝 Content Properties:**`);
-    if (title?.content) {
-      values.push(`- **Title**: "${title.content}" *(say: "change title to...")*`);
+    // Handle both {content: "text"} and direct string formats
+    const titleText = typeof title === 'string' ? title : title?.content;
+    if (titleText) {
+      values.push(`- **Title**: "${titleText}" *(say: "change title to...")*`);
     } else {
       values.push(`- **Title**: *Not set* *(say: "set title to...")*`);
     }
@@ -168,6 +187,67 @@ function generateDesignIntent(aiHints?: { description?: string; [key: string]: a
   }
   
   return aiHints.description;
+}
+
+/**
+ * Generate canvas overview when no specific block is selected
+ */
+function generateCanvasOverview(context: any): string {
+  const { totalBlocks, blockTypes, pageTitle, pageDescription } = context;
+  
+  const sections = [
+    `### Canvas Overview`,
+    pageTitle ? `**Page**: ${pageTitle}` : '',
+    pageDescription ? `*${pageDescription}*` : '',
+    '',
+    `**Total Blocks**: ${totalBlocks || 0}`,
+    ''
+  ];
+  
+  if (blockTypes && blockTypes.length > 0) {
+    sections.push(`**Block Types on Canvas**:`);
+    const typeCounts = blockTypes.reduce((acc: any, type: string) => {
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {});
+    
+    Object.entries(typeCounts).forEach(([type, count]) => {
+      const countNum = count as number;
+      sections.push(`- ${countNum}x ${type} block${countNum > 1 ? 's' : ''}`);
+    });
+  } else {
+    sections.push(`*No blocks on canvas yet. Try saying "create a hero block" to get started!*`);
+  }
+  
+  return sections.filter(s => s).join('\n');
+}
+
+/**
+ * Generate canvas context for a specific block
+ */
+function generateCanvasContext(context: any, blockType: string): string {
+  const { totalBlocks, currentBlockIndex, blockTypes } = context;
+  
+  if (!context || totalBlocks === 0) return '';
+  
+  const position = currentBlockIndex !== undefined ? `${currentBlockIndex + 1} of ${totalBlocks}` : `one of ${totalBlocks}`;
+  const otherBlocks = blockTypes ? blockTypes.filter((t: string) => t !== blockType) : [];
+  
+  const sections = [
+    `### Canvas Context`,
+    `This ${blockType} block is ${position} blocks on the canvas.`,
+    ''
+  ];
+  
+  if (otherBlocks.length > 0) {
+    const uniqueTypes = [...new Set(otherBlocks)];
+    sections.push(`**Other blocks on canvas**: ${uniqueTypes.join(', ')}`);
+    sections.push(`*Tip: You can say "tell me about the canvas" to see all blocks*`);
+  }
+  
+  sections.push('', '---', '');
+  
+  return sections.join('\n');
 }
 
  

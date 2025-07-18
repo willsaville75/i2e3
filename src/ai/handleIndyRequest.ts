@@ -10,6 +10,8 @@
 import { createOpenAIClient, isOpenAIConfigured } from './client';
 import { functionDefinitions, type IndyFunctionName } from './indyFunctions';
 import { useBlocksStore } from '../store/blocksStore';
+import { blockRegistry } from '../blocks';
+import { summariseBlockSchemaForAI } from '../blocks/utils/summariseBlockSchemaForAI';
 
 /**
  * Handle an Indy request using OpenAI function calling
@@ -36,22 +38,50 @@ export async function handleIndyRequest(userInput: string, selectedIndex: number
       ? `Currently selected block: ${blocks[selectedIndex].blockType} at index ${selectedIndex}`
       : `No block selected. Available blocks: ${blocks.map((b, i) => `${i}: ${b.blockType}`).join(', ')}`;
 
-    // Send request to OpenAI with function calling
-    const response = await client.chat.completions.create({
-      model: "gpt-4-0613",
-      messages: [
-        { 
-          role: "system", 
-          content: `You're Indy, an AI assistant helping users build CMS pages using blocks. 
-          
+    // Prepare messages array
+    const messages = [
+      { 
+        role: "system" as const, 
+        content: `You're Indy, an AI assistant helping users build CMS pages using blocks. 
+        
 Context: ${contextMessage}
 
 You can manipulate blocks using the provided functions. When users ask to modify content, use updateBlock. When they want to add new sections, use addBlock. When they want to remove content, use deleteBlock. When they want to save changes, use savePage.
 
 Be helpful and execute the user's requests directly using the appropriate functions.` 
-        },
-        { role: "user", content: userInput }
-      ],
+      },
+      { role: "user" as const, content: userInput }
+    ];
+
+    // Add current block schema summary if a block is selected
+    if (selectedIndex !== null && blocks[selectedIndex]) {
+      const currentBlock = blocks[selectedIndex];
+      const blockEntry = blockRegistry[currentBlock.blockType];
+      
+      if (blockEntry && blockEntry.schema) {
+        const blockSummary = summariseBlockSchemaForAI(blockEntry.schema, {
+          includeHints: true,
+          includeDefaults: true,
+          includeEnums: true
+        });
+        
+        // Add schema summary and current data as a system message
+        const currentDataSummary = JSON.stringify(currentBlock.blockData, null, 2);
+        messages.unshift({
+          role: "system" as const,
+          content: `Current block is of type "${currentBlock.blockType}".
+
+Schema: ${blockSummary}
+
+Current Data: ${currentDataSummary}`
+        });
+      }
+    }
+
+    // Send request to OpenAI with function calling
+    const response = await client.chat.completions.create({
+      model: "gpt-4-0613",
+      messages,
       functions: functionDefinitions,
       function_call: "auto",
       temperature: 0.7,

@@ -18,9 +18,14 @@ import { summariseBlockSchemaForAI } from '../blocks/utils/summariseBlockSchemaF
  * 
  * @param userInput - The user's natural language request
  * @param selectedIndex - Currently selected block index (if any)
+ * @param chatHistory - Previous conversation history for context
  * @returns Promise resolving to a response message
  */
-export async function handleIndyRequest(userInput: string, selectedIndex: number | null = null): Promise<string> {
+export async function handleIndyRequest(
+  userInput: string, 
+  selectedIndex: number | null = null, 
+  chatHistory: Array<{ role: string; content: string }> = []
+): Promise<string> {
   // Check if OpenAI is configured
   if (!isOpenAIConfigured()) {
     throw new Error('OpenAI is not configured. Please set OPENAI_API_KEY environment variable.');
@@ -38,13 +43,12 @@ export async function handleIndyRequest(userInput: string, selectedIndex: number
       ? `Currently selected block: ${blocks[selectedIndex].blockType} at index ${selectedIndex}`
       : `No block selected. Available blocks: ${blocks.map((b, i) => `${i}: ${b.blockType}`).join(', ')}`;
 
-    // Prepare messages array
+    // Start with chat history and add current context
     const messages = [
+      ...chatHistory,
       { 
         role: "system" as const, 
-        content: `You're Indy, an AI assistant helping users build CMS pages using blocks. 
-        
-Context: ${contextMessage}
+        content: `Current Context: ${contextMessage}
 
 You can manipulate blocks using the provided functions. When users ask to modify content, use updateBlock. When they want to add new sections, use addBlock. When they want to remove content, use deleteBlock. When they want to save changes, use savePage.
 

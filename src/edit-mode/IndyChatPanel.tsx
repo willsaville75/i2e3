@@ -39,6 +39,11 @@ export const IndyChatPanel: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { selectedIndex, blocks } = useBlocksStore();
   
+  // Chat history for maintaining conversation context
+  const [chatHistory, setChatHistory] = useState([
+    { role: 'system', content: "You're Indy, a helpful assistant for editing CMS pages." }
+  ]);
+  
   const selectedBlock = selectedIndex !== null ? blocks[selectedIndex] : null;
 
   const scrollToBottom = () => {
@@ -67,7 +72,27 @@ export const IndyChatPanel: React.FC = () => {
 
     try {
       // Use the new handleIndyRequest function with OpenAI function calling
-      const reply = await handleIndyRequest(userMessage, selectedIndex);
+      const reply = await handleIndyRequest(userMessage, selectedIndex, chatHistory);
+      
+      // Update chat history with user message and assistant response
+      // Keep only the last 10 messages to prevent context from growing too large
+      setChatHistory(prev => {
+        const newHistory = [
+          ...prev,
+          { role: 'user', content: userMessage },
+          { role: 'assistant', content: reply }
+        ];
+        
+        // Keep system message + last 10 conversation messages
+        if (newHistory.length > 11) {
+          return [
+            newHistory[0], // Keep system message
+            ...newHistory.slice(-10) // Keep last 10 messages
+          ];
+        }
+        
+        return newHistory;
+      });
       
       // Add assistant response
       const assistantMessageObj: ChatMessage = {
@@ -103,18 +128,42 @@ export const IndyChatPanel: React.FC = () => {
     }
   };
 
+  const clearChatHistory = () => {
+    setChatHistory([
+      { role: 'system', content: "You're Indy, a helpful assistant for editing CMS pages." }
+    ]);
+    setMessages([
+      {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: 'Chat history cleared! I\'m ready to help you with your CMS pages.',
+        timestamp: new Date()
+      }
+    ]);
+  };
+
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-            <span className="text-white font-semibold text-sm">I</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+              <span className="text-white font-semibold text-sm">I</span>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Indy AI</h3>
+              <p className="text-sm text-gray-600">Your intelligent design assistant</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">Indy AI</h3>
-            <p className="text-sm text-gray-600">Your intelligent design assistant</p>
-          </div>
+          
+          <button
+            onClick={clearChatHistory}
+            className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 hover:bg-white rounded-md transition-colors"
+            title="Clear chat history"
+          >
+            Clear
+          </button>
         </div>
         
         {selectedBlock && (

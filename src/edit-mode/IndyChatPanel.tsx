@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useBlocksStore } from '../store/blocksStore';
 import { createOpenAIClient, isOpenAIConfigured } from '../ai/client';
-import { functionDefinitions, type IndyFunctionName } from '../ai/indyFunctions';
+import { functionDefinitions, type IndyFunctionName, validateFunctionCall, createDefaultBlockData } from '../ai/indyFunctions';
 import { blockRegistry } from '../blocks';
 import { summariseBlockSchemaForAI } from '../blocks/utils/summariseBlockSchemaForAI';
 
@@ -242,8 +242,14 @@ You can manipulate blocks using the provided functions. When users ask to modify
         const functionName = assistantMessage.function_call.name as IndyFunctionName;
         const args = JSON.parse(assistantMessage.function_call.arguments || '{}');
         
-        // Execute the function
-        reply = await executeFunction(functionName, args);
+        // Validate function call parameters
+        const validation = validateFunctionCall(functionName, args);
+        if (!validation.valid) {
+          reply = `❌ Invalid function call: ${validation.error}`;
+        } else {
+          // Execute the function
+          reply = await executeFunction(functionName, args);
+        }
       } else {
         reply = assistantMessage.content || "I'm not sure how to help with that.";
       }
@@ -358,7 +364,10 @@ You can manipulate blocks using the provided functions. When users ask to modify
       case 'addBlock':
         const { type, props, position } = args;
         
-        const blockId = addBlock(type, props);
+        // Use provided props or create default data
+        const blockData = props || createDefaultBlockData(type);
+        
+        const blockId = addBlock(type, blockData);
         const newIndex = blocks.length; // Will be added at the end
         
         return `✅ Added new ${type} block at position ${newIndex}.`;

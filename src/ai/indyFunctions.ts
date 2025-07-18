@@ -8,46 +8,65 @@
 export const functionDefinitions = [
   {
     name: "updateBlock",
-    description: "Update a specific block with new content or layout values.",
+    description: "Update a specific block with new content, layout, or styling values. Use this when users want to modify existing block properties like titles, colors, backgrounds, spacing, etc.",
     parameters: {
       type: "object",
       properties: {
-        index: { type: "integer", description: "Index of the block to update." },
-        updates: { type: "object", description: "Updated blockData values." }
+        index: { 
+          type: "integer", 
+          description: "Index of the block to update (0-based). Use the currently selected block index when user says 'this block' or similar." 
+        },
+        updates: { 
+          type: "object", 
+          description: "Updated blockData values. Should match the block's schema structure (e.g., {content: {title: 'New Title'}} for hero blocks)." 
+        }
       },
       required: ["index", "updates"]
     }
   },
   {
     name: "addBlock",
-    description: "Add a new block to the page.",
+    description: "Add a new block to the page. Use this when users want to create new sections, add content blocks, or insert new elements.",
     parameters: {
       type: "object",
       properties: {
-        type: { type: "string", description: "Block type (e.g. 'hero')" },
-        props: { type: "object", description: "Block props" },
-        position: { type: "integer", description: "Optional index to insert at" }
+        type: { 
+          type: "string", 
+          description: "Block type to create. Currently supported: 'hero'. Use 'hero' for landing sections, main headings, or call-to-action areas." 
+        },
+        props: { 
+          type: "object", 
+          description: "Initial block data/props. Should include content, layout, and background properties based on the block type." 
+        },
+        position: { 
+          type: "integer", 
+          description: "Optional index to insert the block at. If not provided, block will be added at the end." 
+        }
       },
       required: ["type", "props"]
     }
   },
   {
     name: "deleteBlock",
-    description: "Delete a block by index.",
+    description: "Delete a block by index. Use this when users want to remove sections, delete content blocks, or clear unwanted elements.",
     parameters: {
       type: "object",
       properties: {
-        index: { type: "integer", description: "Index of the block to delete." }
+        index: { 
+          type: "integer", 
+          description: "Index of the block to delete (0-based). Use the currently selected block index when user says 'delete this block' or similar." 
+        }
       },
       required: ["index"]
     }
   },
   {
     name: "savePage",
-    description: "Save all blocks to the database.",
+    description: "Save all current blocks to the database. Use this when users explicitly ask to save changes, persist data, or publish their work.",
     parameters: {
       type: "object",
-      properties: {}
+      properties: {},
+      description: "No parameters needed. This function saves the current state of all blocks to the database."
     }
   }
 ];
@@ -86,4 +105,87 @@ export type IndyFunctionParams =
 /**
  * Function name type
  */
-export type IndyFunctionName = 'updateBlock' | 'addBlock' | 'deleteBlock' | 'savePage'; 
+export type IndyFunctionName = 'updateBlock' | 'addBlock' | 'deleteBlock' | 'savePage';
+
+/**
+ * Helper function to create default block data for new blocks
+ */
+export function createDefaultBlockData(blockType: string): Record<string, any> {
+  switch (blockType) {
+    case 'hero':
+      return {
+        content: {
+          title: "New Hero Section",
+          subtitle: "Add your subtitle here",
+          buttonText: "Get Started",
+          buttonUrl: "#"
+        },
+        layout: {
+          blockSettings: {
+            blockWidth: false,
+            height: "auto"
+          },
+          contentSettings: {
+            contentWidth: "narrow",
+            textAlignment: "center"
+          },
+          spacing: {
+            topPadding: "lg",
+            bottomPadding: "lg",
+            leftMargin: "none",
+            rightMargin: "none"
+          }
+        },
+        background: {
+          type: "color",
+          color: "blue"
+        }
+      };
+    default:
+      return {
+        content: {},
+        layout: {},
+        background: {}
+      };
+  }
+}
+
+/**
+ * Helper function to validate function parameters
+ */
+export function validateFunctionCall(functionName: IndyFunctionName, args: any): { valid: boolean; error?: string } {
+  switch (functionName) {
+    case 'updateBlock':
+      if (typeof args.index !== 'number') {
+        return { valid: false, error: 'updateBlock requires a numeric index parameter' };
+      }
+      if (!args.updates || typeof args.updates !== 'object') {
+        return { valid: false, error: 'updateBlock requires an updates object parameter' };
+      }
+      break;
+    
+    case 'addBlock':
+      if (!args.type || typeof args.type !== 'string') {
+        return { valid: false, error: 'addBlock requires a string type parameter' };
+      }
+      if (!args.props || typeof args.props !== 'object') {
+        return { valid: false, error: 'addBlock requires a props object parameter' };
+      }
+      break;
+    
+    case 'deleteBlock':
+      if (typeof args.index !== 'number') {
+        return { valid: false, error: 'deleteBlock requires a numeric index parameter' };
+      }
+      break;
+    
+    case 'savePage':
+      // No parameters to validate
+      break;
+    
+    default:
+      return { valid: false, error: `Unknown function: ${functionName}` };
+  }
+  
+  return { valid: true };
+} 

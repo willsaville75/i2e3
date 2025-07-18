@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useBlocksStore } from '../store/blocksStore';
-import { handleIndyRequest } from '../ai/handleIndyRequest';
+import { createOpenAIClient, isOpenAIConfigured } from '../ai/client';
+import { functionDefinitions, type IndyFunctionName } from '../ai/indyFunctions';
+import { blockRegistry } from '../blocks';
+import { summariseBlockSchemaForAI } from '../blocks/utils/summariseBlockSchemaForAI';
 
 /**
  * Indy Chat Panel Component
@@ -61,7 +64,7 @@ export const IndyChatPanel: React.FC = () => {
     setInputValue('');
     setIsLoading(true);
 
-    // Add user message
+    // Add user message to UI
     const userMessageObj: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
@@ -71,37 +74,106 @@ export const IndyChatPanel: React.FC = () => {
     setMessages(prev => [...prev, userMessageObj]);
 
     try {
-      // Use the new handleIndyRequest function with OpenAI function calling
-      const reply = await handleIndyRequest(userMessage, selectedIndex, chatHistory);
-      
-      // Update chat history with user message and assistant response
+      // Check if OpenAI is configured
+      if (!isOpenAIConfigured()) {
+        throw new Error('OpenAI is not configured. Please set OPENAI_API_KEY environment variable.');
+      }
+
+      // Append user message to chat history
+      const newHistory = [
+        ...chatHistory,
+        { role: 'user', content: userMessage }
+      ];
+
+      // Add current block context if available
+      const contextMessages = [...newHistory];
+      if (selectedIndex !== null && blocks[selectedIndex]) {
+        const currentBlock = blocks[selectedIndex];
+        const blockEntry = blockRegistry[currentBlock.blockType];
+        
+        if (blockEntry && blockEntry.schema) {
+          const blockSummary = summariseBlockSchemaForAI(blockEntry.schema, {
+            includeHints: true,
+            includeDefaults: true,
+            includeEnums: true
+          });
+          
+          const currentDataSummary = JSON.stringify(currentBlock.blockData, null, 2);
+          
+          contextMessages.push({
+            role: 'system',
+            content: `Current block is of type "${currentBlock.blockType}".
+
+Schema: ${blockSummary}
+
+Current Data: ${currentDataSummary}
+
+Context: Currently selected block: ${currentBlock.blockType} at index ${selectedIndex}
+
+You can manipulate blocks using the provided functions. When users ask to modify content, use updateBlock. When they want to add new sections, use addBlock. When they want to remove content, use deleteBlock. When they want to save changes, use savePage.`
+          });
+        }
+      } else {
+        contextMessages.push({
+          role: 'system',
+          content: `Context: No block selected. Available blocks: ${blocks.map((b, i) => `${i}: ${b.blockType}`).join(', ')}
+
+You can manipulate blocks using the provided functions. When users ask to modify content, use updateBlock. When they want to add new sections, use addBlock. When they want to remove content, use deleteBlock. When they want to save changes, use savePage.`
+        });
+      }
+
+      // Call OpenAI with function calling
+      const client = await createOpenAIClient();
+      const response = await client.chat.completions.create({
+        model: "gpt-4-0613",
+        messages: contextMessages,
+        functions: functionDefinitions,
+        function_call: "auto",
+        temperature: 0.7,
+        max_tokens: 1000
+      });
+
+      const assistantMessage = response.choices[0].message;
+      let reply: string;
+
+      // Handle function call or regular message
+      if (assistantMessage.function_call) {
+        const functionName = assistantMessage.function_call.name as IndyFunctionName;
+        const args = JSON.parse(assistantMessage.function_call.arguments || '{}');
+        
+        // Execute the function
+        reply = await executeFunction(functionName, args);
+      } else {
+        reply = assistantMessage.content || "I'm not sure how to help with that.";
+      }
+
+      // Update chat history with assistant response
       // Keep only the last 10 messages to prevent context from growing too large
       setChatHistory(prev => {
-        const newHistory = [
-          ...prev,
-          { role: 'user', content: userMessage },
+        const updatedHistory = [
+          ...newHistory,
           { role: 'assistant', content: reply }
         ];
         
         // Keep system message + last 10 conversation messages
-        if (newHistory.length > 11) {
+        if (updatedHistory.length > 11) {
           return [
-            newHistory[0], // Keep system message
-            ...newHistory.slice(-10) // Keep last 10 messages
+            updatedHistory[0], // Keep system message
+            ...updatedHistory.slice(-10) // Keep last 10 messages
           ];
         }
         
-        return newHistory;
+        return updatedHistory;
       });
       
-      // Add assistant response
+      // Add assistant response to UI
       const assistantMessageObj: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
         content: reply,
         timestamp: new Date(),
         metadata: {
-          confidence: 0.9 // Default confidence for function calling responses
+          confidence: 0.9
         }
       };
       setMessages(prev => [...prev, assistantMessageObj]);
@@ -109,13 +181,26 @@ export const IndyChatPanel: React.FC = () => {
     } catch (error) {
       console.error('Error sending message:', error);
       
-      const errorMessage: ChatMessage = {
+      let errorMessage = 'Unknown error occurred';
+      if (error instanceof Error) {
+        if (error.message.includes('rate limit')) {
+          errorMessage = 'Rate limit exceeded. Please try again in a moment.';
+        } else if (error.message.includes('insufficient_quota')) {
+          errorMessage = 'API quota exceeded. Please check your OpenAI billing.';
+        } else if (error.message.includes('invalid_api_key')) {
+          errorMessage = 'Invalid API key. Please check your OpenAI configuration.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      const errorMessageObj: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
+        content: `❌ Error: ${errorMessage}`,
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, errorMessageObj]);
     } finally {
       setIsLoading(false);
     }
@@ -140,6 +225,94 @@ export const IndyChatPanel: React.FC = () => {
         timestamp: new Date()
       }
     ]);
+  };
+
+  const executeFunction = async (functionName: IndyFunctionName, args: any): Promise<string> => {
+    const { addBlock, updateBlock, deleteBlock } = useBlocksStore.getState();
+
+    switch (functionName) {
+      case 'updateBlock':
+        const { index, updates } = args;
+        
+        if (index < 0 || index >= blocks.length) {
+          return `❌ Invalid block index ${index}. Available blocks: 0-${blocks.length - 1}`;
+        }
+        
+        updateBlock(index, updates);
+        return `✅ Updated block ${index} (${blocks[index].blockType}).`;
+
+      case 'addBlock':
+        const { type, props, position } = args;
+        
+        const blockId = addBlock(type, props);
+        const newIndex = blocks.length; // Will be added at the end
+        
+        return `✅ Added new ${type} block at position ${newIndex}.`;
+
+      case 'deleteBlock':
+        const { index: deleteIndex } = args;
+        
+        if (deleteIndex < 0 || deleteIndex >= blocks.length) {
+          return `❌ Invalid block index ${deleteIndex}. Available blocks: 0-${blocks.length - 1}`;
+        }
+        
+        const deletedBlockType = blocks[deleteIndex].blockType;
+        deleteBlock(deleteIndex);
+        
+        return `🗑️ Deleted ${deletedBlockType} block at index ${deleteIndex}.`;
+
+      case 'savePage':
+        return await savePageToDatabase();
+
+      default:
+        return `⚠️ Unknown function: ${functionName}`;
+    }
+  };
+
+  const savePageToDatabase = async (): Promise<string> => {
+    try {
+      // Get current entry context from URL
+      const currentPath = window.location.pathname;
+      const pathParts = currentPath.split('/');
+      
+      // Extract site and entry slugs from URL (assuming /edit/siteSlug/entrySlug format)
+      if (pathParts.length < 4 || pathParts[1] !== 'edit') {
+        return '⚠️ Unable to determine page context for saving.';
+      }
+      
+      const siteSlug = pathParts[2];
+      const entrySlug = pathParts[3];
+      
+      // Prepare payload
+      const payload = {
+        blocks: blocks.map(block => ({
+          id: block.id,
+          blockType: block.blockType,
+          blockData: block.blockData,
+          position: block.position
+        }))
+      };
+      
+      // Save to database using the CMS API
+      const response = await fetch(`/api/cms/entries/${siteSlug}/${entrySlug}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Save failed with status ${response.status}`);
+      }
+      
+      return '💾 Page saved successfully to database.';
+      
+    } catch (error) {
+      console.error('Error saving page:', error);
+      return `❌ Failed to save page: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    }
   };
 
   return (

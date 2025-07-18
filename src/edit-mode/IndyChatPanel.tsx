@@ -28,6 +28,9 @@ interface ChatMessage {
   };
 }
 
+// Configuration constants
+const MAX_CONVERSATION_TURNS = 10; // Maximum number of user/assistant pairs to keep in history
+
 export const IndyChatPanel: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -148,22 +151,14 @@ You can manipulate blocks using the provided functions. When users ask to modify
       }
 
       // Update chat history with assistant response
-      // Keep only the last 10 messages to prevent context from growing too large
+      // Prevent token overload by trimming old conversation pairs
       setChatHistory(prev => {
         const updatedHistory = [
           ...newHistory,
           { role: 'assistant', content: reply }
         ];
         
-        // Keep system message + last 10 conversation messages
-        if (updatedHistory.length > 11) {
-          return [
-            updatedHistory[0], // Keep system message
-            ...updatedHistory.slice(-10) // Keep last 10 messages
-          ];
-        }
-        
-        return updatedHistory;
+        return trimChatHistory(updatedHistory, MAX_CONVERSATION_TURNS);
       });
       
       // Add assistant response to UI
@@ -225,6 +220,21 @@ You can manipulate blocks using the provided functions. When users ask to modify
         timestamp: new Date()
       }
     ]);
+  };
+
+  // Helper function to trim chat history and prevent token overload
+  const trimChatHistory = (history: Array<{ role: string; content: string }>, maxTurns: number = MAX_CONVERSATION_TURNS) => {
+    // If we exceed the limit, trim oldest user/assistant pairs (keep system message)
+    if (history.length > maxTurns * 2 + 1) { // +1 for system message
+      const systemMessage = history[0]; // Always keep system message
+      const trimmed = history.slice(-(maxTurns * 2)); // Keep last N turns (user+assistant pairs)
+      const result = [systemMessage, ...trimmed];
+      
+      console.log(`🧹 Trimmed chat history: ${history.length} → ${result.length} messages (keeping last ${maxTurns} turns)`);
+      return result;
+    }
+    
+    return history;
   };
 
   const executeFunction = async (functionName: IndyFunctionName, args: any): Promise<string> => {

@@ -50,7 +50,96 @@ export const IndyChatPanel: React.FC = () => {
     { role: 'system', content: "You're Indy, a helpful assistant for editing CMS pages." }
   ]);
   
+  // Track the current block to detect when user switches blocks
+  const [currentBlockIndex, setCurrentBlockIndex] = useState<number | null>(selectedIndex);
+  
+  // Track the current page to detect navigation changes
+  const [currentPage, setCurrentPage] = useState<string>(window.location.pathname);
+  
   const selectedBlock = selectedIndex !== null ? blocks[selectedIndex] : null;
+
+  // Reset chat history when user switches to a different block or page
+  useEffect(() => {
+    if (selectedIndex !== currentBlockIndex) {
+      console.log(`🔄 Block selection changed: ${currentBlockIndex} → ${selectedIndex}. Resetting chat history.`);
+      
+      // Reset chat history to system message only
+      setChatHistory([
+        { role: 'system', content: "You're Indy, a helpful assistant for editing CMS pages." }
+      ]);
+      
+      // Add a message to the UI indicating the context has been reset
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: selectedIndex !== null 
+            ? `Now editing ${blocks[selectedIndex]?.blockType} block. How can I help you with this block?`
+            : 'Block selection cleared. Select a block to start editing.',
+          timestamp: new Date(),
+          metadata: {
+            confidence: 1.0
+          }
+        }
+      ]);
+      
+      // Update the tracked block index
+      setCurrentBlockIndex(selectedIndex);
+    }
+  }, [selectedIndex, currentBlockIndex, blocks]);
+
+  // Reset chat history when user navigates to a different page
+  useEffect(() => {
+    const newPage = window.location.pathname;
+    if (newPage !== currentPage) {
+      console.log(`🔄 Page navigation detected: ${currentPage} → ${newPage}. Resetting chat history.`);
+      
+      // Reset chat history to system message only
+      setChatHistory([
+        { role: 'system', content: "You're Indy, a helpful assistant for editing CMS pages." }
+      ]);
+      
+      // Add a message to the UI indicating the context has been reset
+      setMessages([
+        {
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: 'Welcome to a new page! I\'m ready to help you edit your content.',
+          timestamp: new Date(),
+          metadata: {
+            confidence: 1.0
+          }
+        }
+      ]);
+      
+      // Update the tracked page
+      setCurrentPage(newPage);
+      
+      // Reset the block index tracking since we're on a new page
+      setCurrentBlockIndex(null);
+    }
+  });
+
+  // Check for page changes on every render (for client-side routing)
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const newPage = window.location.pathname;
+      if (newPage !== currentPage) {
+        setCurrentPage(newPage);
+      }
+    };
+
+    // Listen for popstate events (back/forward navigation)
+    window.addEventListener('popstate', handleLocationChange);
+    
+    // Also check on every render in case of programmatic navigation
+    handleLocationChange();
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+    };
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -218,6 +307,8 @@ You can manipulate blocks using the provided functions. When users ask to modify
   };
 
   const clearChatHistory = () => {
+    console.log('🧹 Manually clearing chat history');
+    
     setChatHistory([
       { role: 'system', content: "You're Indy, a helpful assistant for editing CMS pages." }
     ]);
@@ -229,6 +320,10 @@ You can manipulate blocks using the provided functions. When users ask to modify
         timestamp: new Date()
       }
     ]);
+    
+    // Reset tracking variables
+    setCurrentBlockIndex(selectedIndex);
+    setCurrentPage(window.location.pathname);
   };
 
   // Helper function to trim chat history and prevent token overload

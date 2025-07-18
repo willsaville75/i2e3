@@ -90,9 +90,9 @@ export function getOpenAIConfig(): OpenAIConfig {
       return v ? parseInt(v) : 10000; // Reduced from 30s to 10s for faster failures
     })(),
     models: {
-      fast: readEnv('OPENAI_MODEL_FAST', 'VITE_OPENAI_MODEL_FAST') || 'gpt-4o',
-      complex: readEnv('OPENAI_MODEL_COMPLEX', 'VITE_OPENAI_MODEL_COMPLEX') || 'gpt-4-turbo',
-      default: readEnv('OPENAI_MODEL_DEFAULT', 'VITE_OPENAI_MODEL_DEFAULT') || 'gpt-4o'
+      fast: readEnv('OPENAI_MODEL_FAST', 'VITE_OPENAI_MODEL_FAST') || 'gpt-4o-mini',  // Fastest model
+      complex: readEnv('OPENAI_MODEL_COMPLEX', 'VITE_OPENAI_MODEL_COMPLEX') || 'gpt-4o',  // Use gpt-4o instead of turbo
+      default: readEnv('OPENAI_MODEL_DEFAULT', 'VITE_OPENAI_MODEL_DEFAULT') || 'gpt-4o-mini'  // Default to fast
     }
   };
   console.log(`✅ Config: getOpenAIConfig completed and cached (${Date.now() - startTime}ms)`);

@@ -1,6 +1,6 @@
 import React from 'react';
-import { ElementInstance } from '../../elements/types';
-import { elementRegistry } from '../../elements/registry';
+import { ElementInstance } from '../elements/types';
+import { elementRegistry } from '../elements/registry';
 
 interface ElementRendererProps {
   element: ElementInstance;

@@ -28,7 +28,7 @@ export async function callAI(input: CallAIInput): Promise<string> {
     model = getDefaultModel(), 
     maxTokens = 1000, 
     temperature = 0.7,
-    systemMessage = 'You are an expert web developer creating structured block configurations for a website builder.'
+    systemMessage = 'You are an expert web developer creating structured block configurations for an intranet builder.'
   } = input;
   
   // Check if OpenAI is configured
@@ -91,7 +91,7 @@ export async function callAIDetailed(input: CallAIInput): Promise<CallAIResponse
     model = getDefaultModel(), 
     maxTokens = 1000, 
     temperature = 0.7,
-    systemMessage = 'You are an expert web developer creating structured block configurations for a website builder.'
+    systemMessage = 'You are an expert web developer creating structured block configurations for an intranet builder.'
   } = input;
   
   if (!isOpenAIConfigured()) {

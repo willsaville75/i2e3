@@ -114,31 +114,37 @@ export function createDefaultBlockData(blockType: string): Record<string, any> {
   switch (blockType) {
     case 'hero':
       return {
-        content: {
-          title: "New Hero Section",
-          subtitle: "Add your subtitle here",
-          buttonText: "Get Started",
-          buttonUrl: "#"
+        elements: {
+          title: {
+            content: "New Hero Section",
+            level: 1
+          },
+          subtitle: {
+            content: "Add your subtitle here"
+          },
+          button: {
+            text: "Get Started",
+            href: "#",
+            variant: "primary",
+            size: "lg"
+          }
         },
         layout: {
           blockSettings: {
-            blockWidth: false,
-            height: "auto"
+            height: "auto",
+            margin: { top: "lg", bottom: "lg" }
           },
           contentSettings: {
             contentWidth: "narrow",
-            textAlignment: "center"
-          },
-          spacing: {
-            topPadding: "lg",
-            bottomPadding: "lg",
-            leftMargin: "none",
-            rightMargin: "none"
+            textAlignment: "center",
+            contentAlignment: { horizontal: "center", vertical: "center" },
+            padding: { top: "xl", bottom: "xl" }
           }
         },
         background: {
           type: "color",
-          color: "blue"
+          color: "blue",
+          colorIntensity: "medium"
         }
       };
     default:

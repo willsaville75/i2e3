@@ -14,7 +14,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Site model - represents a website/project
+// Site model - represents an intranet/project
 model Site {
   id          String   @id @default(cuid())
   name        String

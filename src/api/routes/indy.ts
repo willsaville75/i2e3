@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { runAgent, classifyIntentToAgent } from '../../indy/agents/orchestrator';
+import { classifyIntent } from '../../indy/utils/hybridClassification';
 
 const router: Router = Router();
 
@@ -20,9 +21,10 @@ router.post('/generate', async (req: Request, res: Response) => {
     }
     console.log(`📥 Request validated (${Date.now() - startTime}ms)`);
     
-    // Use AI-driven agent classification instead of regex patterns
-    const agentName = classifyIntentToAgent(userInput);
-    console.log(`🎯 Agent selected: ${agentName} (AI-driven classification) (${Date.now() - startTime}ms)`);
+    // Use hybrid classification: keywords first, AI fallback
+    const classification = await classifyIntent(userInput, { currentData, blockType });
+    const agentName = classification.agent;
+    console.log(`🎯 Agent selected: ${agentName} (${classification.method}, confidence: ${classification.confidence.toFixed(2)}, ${classification.duration}ms) - ${classification.reasoning}`);
     
     // Prepare input for the selected agent
     console.log(`🔧 Preparing agent input (${Date.now() - startTime}ms)`);

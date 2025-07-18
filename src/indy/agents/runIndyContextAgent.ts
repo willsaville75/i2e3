@@ -69,9 +69,9 @@ function generateBlockOverview(blockType: string, props: any): string {
   const blockName = blockType.charAt(0).toUpperCase() + blockType.slice(1);
   
   if (blockType === 'hero') {
-    const hasTitle = props?.content?.title;
-    const hasSubtitle = props?.content?.subtitle;
-    const hasButton = props?.content?.buttonText;
+    const hasTitle = props?.elements?.title?.content;
+    const hasSubtitle = props?.elements?.subtitle?.content;
+    const hasButton = props?.elements?.button?.text;
     
     const components = [];
     if (hasTitle) components.push('title');
@@ -90,7 +90,7 @@ function generateBlockOverview(blockType: string, props: any): string {
 }
 
 /**
- * Generates a summary of current prop values in readable form
+ * Generates a summary of current prop values and what can be changed
  */
 function generateCurrentValues(props: any): string {
   if (!props || typeof props !== 'object') {
@@ -100,26 +100,27 @@ function generateCurrentValues(props: any): string {
   const values = [];
   
   // Handle hero block structure
-  if (props.content) {
-    const { title, subtitle, buttonText, buttonUrl } = props.content;
+  if (props.elements) {
+    const { title, subtitle, button } = props.elements;
     
-    if (title) {
-      values.push(`- **Title**: "${title}"`);
+    values.push(`**📝 Content Properties:**`);
+    if (title?.content) {
+      values.push(`- **Title**: "${title.content}" *(say: "change title to...")*`);
     } else {
-      values.push(`- **Title**: *Not set*`);
+      values.push(`- **Title**: *Not set* *(say: "set title to...")*`);
     }
     
-    if (subtitle) {
-      values.push(`- **Subtitle**: "${subtitle}"`);
+    if (subtitle?.content) {
+      values.push(`- **Subtitle**: "${subtitle.content}" *(say: "change subtitle to...")*`);
     } else {
-      values.push(`- **Subtitle**: *Not set*`);
+      values.push(`- **Subtitle**: *Not set* *(say: "add subtitle...")*`);
     }
     
-    if (buttonText) {
-      const href = buttonUrl ? ` → ${buttonUrl}` : '';
-      values.push(`- **Button**: "${buttonText}"${href}`);
+    if (button?.text) {
+      const href = button.href ? ` → ${button.href}` : '';
+      values.push(`- **Button**: "${button.text}"${href} *(say: "change button to...")*`);
     } else {
-      values.push(`- **Button**: *Not set*`);
+      values.push(`- **Button**: *Not set* *(say: "add button...")*`);
     }
   }
   
@@ -127,23 +128,31 @@ function generateCurrentValues(props: any): string {
   if (props.layout) {
     const { blockSettings, contentSettings } = props.layout;
     
+    values.push(`\n**🎨 Layout Properties:**`);
     if (blockSettings?.height) {
-      values.push(`- **Height**: ${blockSettings.height}`);
+      values.push(`- **Height**: ${blockSettings.height} *(say: "make this full height" or "make this auto height")*`);
     }
     
     if (contentSettings?.textAlignment) {
-      values.push(`- **Text Alignment**: ${contentSettings.textAlignment}`);
+      values.push(`- **Text Alignment**: ${contentSettings.textAlignment} *(say: "center align" or "left align")*`);
+    }
+    
+    if (contentSettings?.contentAlignment) {
+      const h = contentSettings.contentAlignment.horizontal || 'center';
+      const v = contentSettings.contentAlignment.vertical || 'center';
+      values.push(`- **Content Position**: ${h} ${v} *(say: "align content left" or "align content top")*`);
     }
   }
   
   // Handle background
   if (props.background) {
     const { type, color, colorIntensity } = props.background;
+    values.push(`\n**🎨 Background Properties:**`);
     if (type === 'color' && color) {
       const intensity = colorIntensity ? ` (${colorIntensity})` : '';
-      values.push(`- **Background**: ${color}${intensity}`);
+      values.push(`- **Background**: ${color}${intensity} *(say: "change background to red" or "make background darker")*`);
     } else if (type) {
-      values.push(`- **Background**: ${type}`);
+      values.push(`- **Background**: ${type} *(say: "change background to...")*`);
     }
   }
   

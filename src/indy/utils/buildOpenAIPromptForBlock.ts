@@ -43,20 +43,31 @@ export function buildOpenAIPromptForBlock(input: PromptInput): string {
 Current Data:
 ${JSON.stringify(context.current, null, 2)}
 
-Update the content based on the user's intent while preserving the existing structure and any properties not mentioned in the request.
+BACKGROUND GUIDANCE:
+- For solid colors, use: "background": { "type": "color", "color": "blue", "colorIntensity": "medium" }
+- For gradients, use: "background": { "type": "gradient", "gradient": "forest" }
+- Available gradient presets: sunset, ocean, purple, forest, fire, sky, rose, mint
+- For images, use: "background": { "type": "image", "image": { "url": "...", "position": "center", "size": "cover" } }
+- For videos, use: "background": { "type": "video", "video": { "url": "...", "poster": "..." } }
 
-BACKGROUND RULES:
-- For solid colors: { "type": "color", "color": "blue", "colorIntensity": "medium" }
-- For gradients: { "type": "gradient", "gradient": "preset_name" }
-- For images: { "type": "image", "image": { "url": "image_url", "position": "center", "size": "cover" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.4 } }
-- For videos: { "type": "video", "video": { "url": "video_url", "poster": "poster_image_url" }, "overlay": { "enabled": true, "color": "black", "opacity": 0.3 } }
-- Available gradient presets: "sunset", "ocean", "purple", "forest", "fire", "sky", "rose", "mint"
+IMPORTANT: If user mentions "forest", "ocean", "sunset", "fire", "sky", "rose", "mint", or "purple" for background, use gradient type with the corresponding preset.
+
+Update the content based on the user's intent while preserving the existing structure and any properties not mentioned in the request.
 
 Return ONLY valid JSON with your updates. Keep the same structure and preserve any existing settings (like background, layout) unless specifically requested to change them.`;
     }
     
     // For create mode or when no current data, use template
     return `${base}${goal}
+
+BACKGROUND GUIDANCE:
+- For solid colors, use: "background": { "type": "color", "color": "blue", "colorIntensity": "medium" }
+- For gradients, use: "background": { "type": "gradient", "gradient": "forest" }
+- Available gradient presets: sunset, ocean, purple, forest, fire, sky, rose, mint
+- For images, use: "background": { "type": "image", "image": { "url": "...", "position": "center", "size": "cover" } }
+- For videos, use: "background": { "type": "video", "video": { "url": "...", "poster": "..." } }
+
+IMPORTANT: If user mentions "forest", "ocean", "sunset", "fire", "sky", "rose", "mint", or "purple" for background, use gradient type with the corresponding preset.
 
 Return ONLY valid JSON in this EXACT format:
 {

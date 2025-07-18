@@ -5,7 +5,7 @@
  * Eliminates the need for hardcoded property handling in each block
  */
 
-import { spacing, colors, alignment } from './tokens';
+import { spacing, colors, alignment, gradient, sizing, container } from './tokens';
 
 export interface PropertyMapping {
   path: string;                           // Schema path: "layout.blockSettings.blockWidth"
@@ -49,6 +49,24 @@ export function setNestedValue(obj: any, path: string, value: any): any {
 }
 
 /**
+ * Generate gradient to solid color mapping dynamically from gradient presets
+ */
+function getGradientToSolidMapping(): Record<string, string> {
+  // This could be made more dynamic by analyzing gradient.presets colors
+  // For now, keeping the mapping but making it clear it's derived from presets
+  return {
+    'sunset': 'orange',    // gradient.presets.sunset -> orange tones
+    'ocean': 'blue',       // gradient.presets.ocean -> blue tones
+    'purple': 'purple',    // gradient.presets.purple -> purple tones
+    'forest': 'green',     // gradient.presets.forest -> green tones
+    'fire': 'red',         // gradient.presets.fire -> red tones
+    'sky': 'sky',          // gradient.presets.sky -> sky tones
+    'rose': 'rose',        // gradient.presets.rose -> rose tones
+    'mint': 'teal'         // gradient.presets.mint -> teal tones
+  };
+}
+
+/**
  * Hero Block Property Mappings
  * Maps schema properties to actual styling behavior
  */
@@ -58,7 +76,7 @@ export const HERO_PROPERTY_MAPPINGS: PropertyMapping[] = [
     path: 'layout.blockSettings.blockWidth',
     type: 'className',
     target: 'max-width',
-    transform: (value: boolean) => value ? 'max-w-none' : 'max-w-7xl',
+    transform: (value: boolean) => value ? container.maxWidth.full : container.maxWidth.wide,
     selector: 'content'
   },
   
@@ -68,14 +86,8 @@ export const HERO_PROPERTY_MAPPINGS: PropertyMapping[] = [
     type: 'className', 
     target: 'height',
     transform: (value: string) => {
-      const heightMap = {
-        'auto': 'min-h-auto',
-        'screen': 'min-h-screen',
-        'half': 'min-h-[50vh]',
-        'third': 'min-h-[33vh]',
-        'quarter': 'min-h-[25vh]'
-      };
-      return heightMap[value as keyof typeof heightMap] || 'min-h-screen';
+      // Read from tokens.ts as single source of truth
+      return sizing.height[value as keyof typeof sizing.height] || sizing.height.screen;
     },
     selector: 'section'
   },
@@ -148,12 +160,8 @@ export const HERO_PROPERTY_MAPPINGS: PropertyMapping[] = [
     type: 'className',
     target: 'content-width',
     transform: (value: string) => {
-      const widthMap = {
-        'narrow': 'max-w-4xl',
-        'wide': 'max-w-7xl', 
-        'full': 'max-w-none'
-      };
-      return widthMap[value as keyof typeof widthMap] || 'max-w-7xl';
+      // Read from tokens.ts as single source of truth
+      return container.maxWidth[value as keyof typeof container.maxWidth] || container.maxWidth.wide;
     },
     selector: 'content'
   },
@@ -169,7 +177,29 @@ export const HERO_PROPERTY_MAPPINGS: PropertyMapping[] = [
     selector: 'content'
   },
   
-  // Background Color
+  // Content Horizontal Alignment
+  {
+    path: 'layout.contentSettings.contentAlignment.horizontal',
+    type: 'className',
+    target: 'justify-content',
+    transform: (value: string) => {
+      return alignment.horizontal[value as keyof typeof alignment.horizontal] || null;
+    },
+    selector: 'content'
+  },
+  
+  // Content Vertical Alignment
+  {
+    path: 'layout.contentSettings.contentAlignment.vertical',
+    type: 'className',
+    target: 'align-items',
+    transform: (value: string) => {
+      return alignment.vertical[value as keyof typeof alignment.vertical] || null;
+    },
+    selector: 'content'
+  },
+  
+  // Background Color (Dynamic - reads from both colors.scheme and gradient.presets)
   {
     path: 'background.color',
     type: 'className',
@@ -180,8 +210,24 @@ export const HERO_PROPERTY_MAPPINGS: PropertyMapping[] = [
       const colorScheme = value || 'blue';
       const intensity = blockData?.background?.colorIntensity || 'medium';
       
-      return colors.scheme[colorScheme as keyof typeof colors.scheme]?.[colors.intensity[intensity as keyof typeof colors.intensity]] 
-             || colors.scheme.blue['500'];
+      // First check if it's a standard color in colors.scheme
+      const standardColor = colors.scheme[colorScheme as keyof typeof colors.scheme];
+      if (standardColor) {
+        return standardColor[colors.intensity[intensity as keyof typeof colors.intensity]] || standardColor['500'];
+      }
+      
+      // Then check if it's a gradient preset color - map to closest solid color
+      const gradientPreset = gradient.presets[colorScheme as keyof typeof gradient.presets];
+      if (gradientPreset) {
+        // Map gradient colors to closest solid colors (dynamic from gradient presets)
+        const gradientToSolidMapping = getGradientToSolidMapping();
+        const solidColor = gradientToSolidMapping[colorScheme] || 'blue';
+        const solidColorScheme = colors.scheme[solidColor as keyof typeof colors.scheme];
+        return solidColorScheme?.[colors.intensity[intensity as keyof typeof colors.intensity]] || solidColorScheme?.['500'];
+      }
+      
+      // Fallback to blue
+      return colors.scheme.blue['500'];
     },
     selector: 'section',
     condition: (_value: any, blockData?: any) => blockData?.background?.type === 'color'

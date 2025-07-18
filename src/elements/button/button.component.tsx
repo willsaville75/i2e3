@@ -1,5 +1,5 @@
 import React from 'react'
-import { button } from '../../src/blocks/shared/tokens'
+import { button } from '../../blocks/shared/tokens'
 
 interface ButtonProps {
   text?: string

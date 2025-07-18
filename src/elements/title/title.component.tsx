@@ -1,5 +1,5 @@
 import React from 'react'
-import { typography, alignment } from '../../src/blocks/shared/tokens'
+import { typography, alignment } from '../../blocks/shared/tokens'
 
 interface TitleProps {
   content: string

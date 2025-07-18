@@ -54,9 +54,8 @@ export const sizing = {
   },
   height: {
     auto: 'min-h-0',
-    small: 'min-h-[400px]',
-    medium: 'min-h-[500px]',
-    large: 'min-h-[600px]',
+    quarter: 'min-h-[25vh]',
+    half: 'min-h-[50vh]',
     screen: 'min-h-screen'
   }
 } as const;
@@ -69,7 +68,7 @@ export const container = {
   maxWidth: {
     narrow: 'max-w-3xl',  // 768px max
     medium: 'max-w-5xl',  // 1024px max
-    wide: 'max-w-6xl',    // 1152px max
+    wide: 'max-w-7xl',    // 1280px max - matches existing usage
     full: 'max-w-full'
   },
   breakpoints: {
@@ -236,6 +235,7 @@ export const colors = {
       '800': 'bg-cyan-800',
       '900': 'bg-cyan-900'
     },
+
     sky: {
       '50': 'bg-sky-50',
       '100': 'bg-sky-100',

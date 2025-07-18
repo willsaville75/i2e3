@@ -1,5 +1,5 @@
 import React from 'react'
-import { typography, alignment, spacing } from '../../src/blocks/shared/tokens'
+import { typography, alignment, spacing } from '../../blocks/shared/tokens'
 
 interface TextProps {
   content: string
@@ -146,8 +146,8 @@ export const Text: React.FC<TextProps> = ({
     transformClasses[transform],
     fontFamilyClasses[fontFamily],
     backgroundColor !== 'bg-transparent' ? backgroundColor : '',
-    paddingClasses[padding],
-    marginClasses[margin],
+    paddingClasses[padding as keyof typeof paddingClasses],
+    marginClasses[margin as keyof typeof marginClasses],
     maxWidthClasses[maxWidth],
     truncate ? 'truncate' : '',
     whitespaceClasses[whitespace],

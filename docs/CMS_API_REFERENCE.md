@@ -10,7 +10,7 @@ http://localhost:3002/api
 ```
 
 ### Database Models
-- **Site**: Represents a website/project
+- **Site**: Represents an intranet/project
 - **Entry**: Represents a page/content entry within a site
 - **CanvasBlock**: Represents individual content blocks within an entry
 - **Media**: Standalone model for file uploads (future use)

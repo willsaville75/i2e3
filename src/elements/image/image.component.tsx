@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import clsx from 'clsx'
-import { image, borders, shadows } from '../../src/blocks/shared/tokens'
+import { image, borders, shadows } from '../../blocks/shared/tokens'
 
 // Simple placeholder component
 const ImagePlaceholder: React.FC<{ className?: string }> = ({ className }) => (

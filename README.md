@@ -1,6 +1,6 @@
 # I2E - AI-First Site Builder
 
-A TypeScript-first AI-powered website builder with Vite + React frontend and Express backend.
+A TypeScript-first AI-powered intranet builder with Vite + React frontend and Express backend.
 
 ## Project Structure
 

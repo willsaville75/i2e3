@@ -174,11 +174,12 @@ const SiteRouterContent: React.FC<{ siteSlug: string; entrySlug: string }> = ({
           <PageNav />
           <div className="min-h-screen bg-white">
             {blocks.map((block: BlockInstance) => (
-              <BlockRenderer
-                key={block.id}
-                type={block.blockType}
-                props={block.blockData}
-              />
+              <div key={block.id} data-block-id={block.id}>
+                <BlockRenderer
+                  type={block.blockType}
+                  props={block.blockData}
+                />
+              </div>
             ))}
           </div>
         </>

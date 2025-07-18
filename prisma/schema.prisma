@@ -25,6 +25,7 @@ model Site {
   // Timestamps
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime? // Soft delete timestamp
   
   // Relations
   entries     Entry[]
@@ -80,7 +81,7 @@ model CanvasBlock {
   
   // Ensure unique position per entry
   @@unique([entryId, position])
-  @@map("canvas_blocks")
+    @@map("canvas_blocks")
 }
 
 // Media model - for file uploads and media management
@@ -91,7 +92,10 @@ model Media {
   mimeType    String
   size        Int      // File size in bytes
   url         String   // Storage URL (local/cloud)
+  publicId    String?  // Cloud storage public ID (for Cloudinary etc)
   alt         String?  // Alt text for accessibility
+  format      String?  // File format extension
+  resourceType String? // Type: image, video, raw
   
   // Optional metadata
   width       Int?     // For images

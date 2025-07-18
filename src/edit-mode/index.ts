@@ -1,7 +1,8 @@
 export { EditModeProvider, useEditMode } from './EditModeProvider';
-export { EditLayout } from './EditLayout';
+export { default as EditLayout } from './EditLayout';
 export { EditHeader } from './EditHeader';
-export { EditableBlockCanvas } from './EditableBlockCanvas';
-export { IndyChatPanel } from './IndyChatPanel';
+export { default as EditableBlockCanvas } from './EditableBlockCanvas';
+export { IndyChatBubble } from './IndyChatBubble';
+export { BlockActions } from './BlockActions';
 export { DoneButton } from './DoneButton';
 export { EditModeControls } from './EditModeControls'; 

@@ -115,7 +115,7 @@ export async function runIndy(options: RunIndyOptions): Promise<IndyResult> {
   // Return enhanced result with context
   return {
     ...result,
-    mode,
+    mode: mode as 'block' | 'page',
     context
   };
 } 

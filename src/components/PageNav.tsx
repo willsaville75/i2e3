@@ -29,7 +29,10 @@ export const PageNav: React.FC = () => {
         {/* Right side - Edit button */}
         <div className="flex items-center">
           <button
-            onClick={toggleEditMode}
+            onClick={() => {
+              console.log('🎯 Edit Page button clicked');
+              toggleEditMode();
+            }}
             className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
             Edit Page

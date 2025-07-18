@@ -1,139 +1,176 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { BlockRenderer } from '../components/BlockRenderer';
+import { BlockActions } from './BlockActions';
+import { BlockAnimationWrapper } from './components/BlockAnimationWrapper';
+import { DevicePreview } from './components/DevicePreview';
 import { useBlocksStore } from '../store/blocksStore';
-import { useEditMode } from './EditModeProvider';
+import { scrollToBlock } from '../utils/scrollToBlock';
 
-export const EditableBlockCanvas: React.FC = () => {
-  const { blocks, selectedIndex, setSelectedIndex, deleteBlock, reorderBlocks } = useBlocksStore();
-  const { isEditMode } = useEditMode();
+// Professional animation constants
+const ANIMATION_DURATION = {
+  fast: 0.2,
+  normal: 0.4,
+  slow: 0.6
+};
 
-  const handleDeleteBlock = (index: number, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent block selection when clicking delete
-    if (window.confirm('Are you sure you want to delete this block?')) {
-      deleteBlock(index);
-    }
-  };
+const EASING_CURVES = {
+  easeOut: [0.0, 0.0, 0.2, 1.0] as const,
+  easeInOut: [0.4, 0.0, 0.2, 1.0] as const,
+  smooth: [0.25, 0.1, 0.25, 1.0] as const,
+  spring: { type: "spring" as const, damping: 30, stiffness: 400 }
+};
 
-  const handleMoveUp = (index: number, event: React.MouseEvent) => {
-    event.stopPropagation();
+const DEVICE_SIZES = {
+  mobile: { width: '375px' },
+  tablet: { width: '768px' },
+  desktop: { width: '100%' }
+};
+
+type PreviewMode = 'desktop' | 'tablet' | 'mobile';
+
+interface EditableBlockCanvasProps {
+  isEditMode: boolean;
+  selectedIndex: number | null;
+  onSelectBlock: (index: number) => void;
+  previewMode?: PreviewMode;
+}
+
+const EditableBlockCanvas: React.FC<EditableBlockCanvasProps> = ({
+  isEditMode,
+  selectedIndex,
+  onSelectBlock,
+  previewMode = 'desktop',
+}) => {
+  const { blocks } = useBlocksStore();
+
+  // Handle block scrolling
+  useEffect(() => {
+    const handleNewBlock = (event: CustomEvent<{ blockId: string }>) => {
+      console.log('🎨 New block event received:', event.detail.blockId);
+      
+      // Scroll to the new block
+      setTimeout(() => {
+        scrollToBlock(event.detail.blockId);
+      }, 500);
+    };
+
+    window.addEventListener('blockCreated', handleNewBlock as EventListener);
+    return () => {
+      window.removeEventListener('blockCreated', handleNewBlock as EventListener);
+    };
+  }, []);
+
+  const handleMoveUp = (index: number) => {
+    const { reorderBlocks } = useBlocksStore.getState();
     if (index > 0) {
       reorderBlocks(index, index - 1);
-      setSelectedIndex(index - 1); // Keep the block selected after moving
+      if (selectedIndex === index) {
+        onSelectBlock(index - 1);
+      } else if (selectedIndex === index - 1) {
+        onSelectBlock(index);
+      }
     }
   };
 
-  const handleMoveDown = (index: number, event: React.MouseEvent) => {
-    event.stopPropagation();
+  const handleMoveDown = (index: number) => {
+    const { reorderBlocks } = useBlocksStore.getState();
     if (index < blocks.length - 1) {
       reorderBlocks(index, index + 1);
-      setSelectedIndex(index + 1); // Keep the block selected after moving
+      if (selectedIndex === index) {
+        onSelectBlock(index + 1);
+      } else if (selectedIndex === index + 1) {
+        onSelectBlock(index);
+      }
+    }
+  };
+
+  const handleDeleteBlock = (index: number) => {
+    const { deleteBlock } = useBlocksStore.getState();
+    deleteBlock(index);
+    if (selectedIndex === index) {
+      onSelectBlock(Math.max(0, index - 1));
+    } else if (selectedIndex !== null && selectedIndex > index) {
+      onSelectBlock(selectedIndex - 1);
+    }
+  };
+
+  // Get responsive container classes based on preview mode
+  const getContainerClasses = () => {
+    const baseClasses = 'transition-all';
+    
+    switch (previewMode) {
+      case 'mobile':
+      case 'tablet':
+        return `${baseClasses} bg-white`;
+      case 'desktop':
+      default:
+        return `${baseClasses} bg-transparent`;
     }
   };
 
   return (
-    <div className="space-y-6">
-      {blocks.map((block, index) => {
-          const isSelected = selectedIndex === index;
-          
-          return (
-            <div
-              key={block.id}
-              className={`relative transition-all duration-200 ${
-                isEditMode ? 'cursor-pointer' : ''
-              } ${
-                isSelected && isEditMode
-                  ? 'ring-2 ring-blue-500 ring-offset-4 rounded-lg'
-                  : isEditMode
-                  ? 'hover:ring-2 hover:ring-gray-300 hover:ring-offset-2 rounded-lg'
-                  : ''
-              }`}
-              onClick={() => {
-                if (isEditMode) {
-                  setSelectedIndex(isSelected ? null : index);
-                }
-              }}
-            >
-              {isSelected && isEditMode && (
-                <div className="absolute -top-3 -right-3 flex items-center gap-2 z-10">
-                  <div className="bg-blue-500 text-white text-xs px-3 py-1 rounded-full shadow-lg flex items-center gap-2">
-                    <span>Selected</span>
-                    <span className="text-blue-200">({index + 1} of {blocks.length})</span>
-                  </div>
-                  
-                  {/* Reorder Controls */}
-                  <div className="flex items-center bg-white rounded-full shadow-lg">
-                    {/* Move Up Button */}
-                    <button
-                      onClick={(e) => handleMoveUp(index, e)}
-                      disabled={index === 0}
-                      className={`${
-                        index === 0 
-                          ? 'text-gray-300 cursor-not-allowed' 
-                          : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                      } p-1 rounded-l-full transition-all duration-200`}
-                      title={index === 0 ? "Already at top" : "Move block up"}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 3a1 1 0 01.707.293l5 5a1 1 0 01-1.414 1.414L11 6.414V16a1 1 0 11-2 0V6.414L5.707 9.707a1 1 0 01-1.414-1.414l5-5A1 1 0 0110 3z" clipRule="evenodd"/>
-                      </svg>
-                    </button>
-                    
-                    <div className="w-px h-5 bg-gray-300"></div>
-                    
-                    {/* Move Down Button */}
-                    <button
-                      onClick={(e) => handleMoveDown(index, e)}
-                      disabled={index === blocks.length - 1}
-                      className={`${
-                        index === blocks.length - 1
-                          ? 'text-gray-300 cursor-not-allowed' 
-                          : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                      } p-1 rounded-r-full transition-all duration-200`}
-                      title={index === blocks.length - 1 ? "Already at bottom" : "Move block down"}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 17a1 1 0 01-.707-.293l-5-5a1 1 0 111.414-1.414L9 13.586V4a1 1 0 112 0v9.586l3.293-3.293a1 1 0 111.414 1.414l-5 5A1 1 0 0110 17z" clipRule="evenodd"/>
-                      </svg>
-                    </button>
-                  </div>
-                  
-                  {/* Delete Button */}
-                  <button
-                    onClick={(e) => handleDeleteBlock(index, e)}
-                    className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 rounded-full shadow-lg transition-colors duration-200 flex items-center gap-1"
-                    title="Delete block"
+    <div className="flex-1 bg-gray-50 overflow-y-auto">
+      <div className={previewMode === 'desktop' 
+        ? "min-h-full" 
+        : "min-h-full px-4 sm:px-6 lg:px-8 py-12 flex items-center justify-center"
+      }>
+        <DevicePreview 
+          previewMode={previewMode}
+          animationDuration={ANIMATION_DURATION.normal}
+          easingCurve={EASING_CURVES.smooth}
+        >
+          <motion.div 
+            className={`${getContainerClasses()}`}
+            initial={false}
+            animate={{
+              opacity: 1,
+              maxWidth: previewMode === 'desktop' ? DEVICE_SIZES[previewMode].width : '100%'
+            }}
+            transition={{
+              duration: ANIMATION_DURATION.normal,
+              ease: EASING_CURVES.smooth
+            }}
+          >
+            <AnimatePresence mode="sync">
+              {blocks.map((block, index) => {
+                const isSelected = selectedIndex === index;
+              
+                return (
+                  <BlockAnimationWrapper
+                    key={block.id}
+                    blockId={block.id}
+                    isSelected={isSelected}
+                    isEditMode={isEditMode}
+                    onClick={() => {
+                      if (isEditMode) {
+                        onSelectBlock(index);
+                      }
+                    }}
                   >
-                    <svg 
-                      className="w-3 h-3" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth={2} 
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" 
+                    {isSelected && isEditMode && (
+                      <BlockActions
+                        index={index}
+                        totalBlocks={blocks.length}
+                        onMoveUp={handleMoveUp}
+                        onMoveDown={handleMoveDown}
+                        onDelete={handleDeleteBlock}
                       />
-                    </svg>
-                    Delete
-                  </button>
-                </div>
-              )}
-              
-              <BlockRenderer
-                type={block.blockType}
-                props={block.blockData}
-              />
-              
-              {process.env.NODE_ENV === 'development' && (
-                <div className="mt-2 p-2 bg-gray-100 rounded text-xs text-gray-600 font-mono">
-                  {block.blockType} • Position: {block.position} • Index: {index} • ID: {block.id}
-                </div>
-              )}
-            </div>
-          );
-        })}
+                    )}
+                    
+                    <BlockRenderer
+                      type={block.blockType}
+                      props={block.blockData}
+                    />
+                  </BlockAnimationWrapper>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
+        </DevicePreview>
+      </div>
     </div>
   );
-}; 
+};
+
+export default EditableBlockCanvas; 

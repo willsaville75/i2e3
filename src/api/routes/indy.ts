@@ -149,7 +149,7 @@ router.post('/action', async (req: Request, res: Response) => {
     // AI-first: Use orchestrator to classify and route efficiently
     console.log('🤖 API: Using AI-first orchestrator approach');
     
-    const agentName = classifyIntentToAgent(userInput);
+    const agentName = await classifyIntentToAgent(userInput);
     
     // Prepare agent input based on agent type
     let agentInput;
@@ -161,14 +161,33 @@ router.post('/action', async (req: Request, res: Response) => {
         schema: null,
         aiHints: null
       };
+    } else if (agentName === 'runIndyConversationAgent') {
+      // Conversation agent just needs the user input
+      agentInput = {
+        userInput: userInput,
+        intent: userInput
+      };
+    } else if (agentName === 'createAgent' && !blockType) {
+      // Extract blockType from user input for create operations
+      const blockTypeMatch = userInput.match(/\b(hero|feature|cta|testimonial|stats|gallery|faq|pricing|team|contact)\b/i);
+      const inferredBlockType = blockTypeMatch ? blockTypeMatch[1].toLowerCase() : 'hero';
+      
+      console.log(`📦 Inferred blockType: ${inferredBlockType} from user input`);
+      
+      agentInput = {
+        blockType: inferredBlockType,
+        currentData: blockData,
+        intent: userInput,
+        blockId
+      };
     } else {
-      // Other agents can use default blockType
-              agentInput = {
-          blockType: blockType || 'hero',
-          currentData: blockData,
-          intent: userInput,
-          blockId
-        };
+      // Other agents - only set blockType if one is provided
+      agentInput = {
+        blockType: blockType,
+        currentData: blockData,
+        intent: userInput,
+        blockId
+      };
     }
     
     const result = await runAgent(agentName, agentInput);
@@ -185,19 +204,65 @@ router.post('/action', async (req: Request, res: Response) => {
         confidence: 1.0,
         agentUsed: agentName
       });
-    } else {
+    } else if (agentName === 'runIndyConversationAgent') {
+      // Extract the actual response string from the conversation agent result
+      const responseText = typeof result === 'object' && result.response 
+        ? result.response 
+        : typeof result === 'string' 
+          ? result 
+          : "I can help you create and update content. What would you like to do?";
+      
       res.json({
         success: true,
         action: {
-          type: blockId ? 'UPDATE_BLOCK' : 'ADD_BLOCK',
-          blockType: blockType || 'hero',
-          blockId,
-          data: result.blockData || result
+          type: 'CONVERSATION',
+          response: responseText
         },
-        message: 'Content updated successfully',
-        confidence: 0.9,
+        message: responseText,
+        confidence: 1.0,
         agentUsed: agentName
       });
+    } else {
+      // Check if this is a create/update action based on the agent used
+      if (agentName === 'createAgent' || agentName === 'updateAgent') {
+        // Generate a user-friendly message based on the action
+        const actionType = blockId ? 'UPDATE_BLOCK' : 'ADD_BLOCK';
+        const actionVerb = blockId ? 'updated' : 'created';
+        const finalBlockType = blockType || agentInput.blockType || 'block';
+        const blockTypeDisplay = finalBlockType ? `${finalBlockType} block` : 'block';
+        
+        let message = `✅ Successfully ${actionVerb} your ${blockTypeDisplay}!`;
+        
+        // Add specific details if available
+        if (result.blockData?.elements?.title?.content) {
+          message += ` The title "${result.blockData.elements.title.content}" has been set.`;
+        }
+        
+        res.json({
+          success: true,
+          action: {
+            type: actionType,
+            blockType: finalBlockType,
+            blockId,
+            data: result.blockData || result
+          },
+          message,
+          confidence: 0.9,
+          agentUsed: agentName
+        });
+      } else {
+        // Default conversation response for other cases
+        res.json({
+          success: true,
+          action: {
+            type: 'CONVERSATION',
+            response: result.response || result
+          },
+          message: result.response || result,
+          confidence: 0.8,
+          agentUsed: agentName
+        });
+      }
     }
     
   } catch (error) {

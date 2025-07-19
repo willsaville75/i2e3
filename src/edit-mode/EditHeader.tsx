@@ -96,7 +96,7 @@ export const EditHeader: React.FC<EditHeaderProps> = ({
   const redo = () => {};
 
   return (
-    <div className="h-14 bg-zinc-800 border-b border-zinc-700 flex items-center justify-between px-4 relative z-50" data-testid="edit-header">
+    <div className="h-12 bg-zinc-800 border-b border-zinc-700 flex items-center justify-between px-4 relative z-50" data-testid="edit-header">
       {/* Left Section - Site/Page Info & Controls */}
       <div className="flex items-center space-x-4">
         {/* Properties Panel Toggle */}

@@ -63,28 +63,20 @@ export const PropertiesPanel: React.FC = () => {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-900">Properties</h2>
-        <p className="text-sm text-gray-600 mt-1">
+      <div className="px-4 py-3 bg-gradient-to-r from-purple-700 to-purple-900 border-b border-purple-800">
+        <h2 className="text-base font-semibold text-white">Properties</h2>
+        <p className="text-xs text-purple-100 mt-0.5">
           Editing {selectedBlock.blockType} block
         </p>
       </div>
 
       {/* Dynamic Form */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
         <DynamicFormRenderer
           sections={formSections}
           blockData={selectedBlock.blockData}
           onChange={handleFieldChange}
         />
-      </div>
-
-      {/* Footer */}
-      <div className="p-6 border-t border-gray-200 bg-gray-50">
-        <div className="text-xs text-gray-500">
-          <p>Changes are saved automatically when you click "Done"</p>
-          <p className="mt-1">Block ID: {selectedBlock.id}</p>
-        </div>
       </div>
     </div>
   );

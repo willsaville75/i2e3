@@ -265,9 +265,9 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
           onClick={() => section.collapsible && toggleSection(section.id)}
         >
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
+            <h3 className="text-base font-semibold text-gray-900">{section.title}</h3>
             {section.description && (
-              <p className="text-sm text-gray-600 mt-1">{section.description}</p>
+              <p className="text-xs text-gray-600 mt-0.5">{section.description}</p>
             )}
           </div>
           {section.collapsible && (

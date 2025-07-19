@@ -19,9 +19,14 @@ export const ChatBubblePopup: React.FC<ChatBubblePopupProps> = ({
     <motion.div
       initial={{ opacity: 0, scale: 0.8, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.8, y: 20 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="fixed bottom-24 right-6 w-96 h-[500px] bg-white rounded-lg shadow-xl border border-gray-200 z-[9999] flex flex-col overflow-hidden"
+      exit={{ opacity: 0, scale: 0.9, y: -20 }}
+      transition={{ 
+        type: "spring", 
+        stiffness: 300, 
+        damping: 30,
+        opacity: { duration: 0.2 }
+      }}
+      className="fixed bottom-24 right-6 w-96 h-[500px] bg-white rounded-2xl shadow-xl border border-gray-200 z-[9999] flex flex-col overflow-hidden"
     >
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-3 flex items-center justify-between">

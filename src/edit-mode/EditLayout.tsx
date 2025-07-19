@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useEditMode } from './EditModeProvider';
 import { EditHeader } from './EditHeader';
 import EditableBlockCanvas from './EditableBlockCanvas';
@@ -26,23 +27,37 @@ export default function EditLayout() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Left Panel - Properties (conditional) */}
-      {isPropsOpen && (
-        <div className="w-80 border-r border-gray-200 bg-white">
-          <PropertiesPanel />
-        </div>
-      )}
+    <div className="flex flex-col h-screen bg-gray-50">
+      {/* Header - Full width at top */}
+      <EditHeader 
+        onToggleProps={() => setIsPropsOpen(!isPropsOpen)}
+        isPropsOpen={isPropsOpen}
+        previewMode={previewMode}
+        onPreviewModeChange={setPreviewMode}
+      />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <EditHeader 
-          onToggleProps={() => setIsPropsOpen(!isPropsOpen)}
-          isPropsOpen={isPropsOpen}
-          previewMode={previewMode}
-          onPreviewModeChange={setPreviewMode}
-        />
+      {/* Main Content Area - Below header */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Panel - Properties (slides in from left) */}
+        <AnimatePresence>
+          {isPropsOpen && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 320, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ 
+                duration: 0.3, 
+                ease: 'easeInOut',
+                opacity: { duration: 0.2 }
+              }}
+              className="border-r border-gray-200 bg-white shadow-md overflow-hidden"
+            >
+              <div className="w-80 h-full">
+                <PropertiesPanel />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Canvas Area */}
         <div className="flex-1 overflow-auto">

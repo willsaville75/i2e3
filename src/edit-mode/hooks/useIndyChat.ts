@@ -51,14 +51,14 @@ export const useIndyChat = (): UseIndyChatReturn => {
         console.log('🧭 Schema navigation command detected:', userMessage);
         
         // Add user message to chat
-        const userMessageObj: ChatMessage = {
+        const navUserMsg: ChatMessage = {
           id: Date.now().toString(),
           role: 'user',
           type: 'user',
           content: userMessage,
           timestamp: new Date()
         };
-        addMessage(userMessageObj);
+        addMessage(navUserMsg);
 
         try {
           // Call schema presenter agent with navigation

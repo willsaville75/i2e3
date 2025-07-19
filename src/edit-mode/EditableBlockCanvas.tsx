@@ -21,12 +21,6 @@ const EASING_CURVES = {
   spring: { type: "spring" as const, damping: 30, stiffness: 400 }
 };
 
-const DEVICE_SIZES = {
-  mobile: { width: '375px' },
-  tablet: { width: '768px' },
-  desktop: { width: '100%' }
-};
-
 type PreviewMode = 'desktop' | 'tablet' | 'mobile';
 
 interface EditableBlockCanvasProps {
@@ -34,6 +28,7 @@ interface EditableBlockCanvasProps {
   selectedIndex: number | null;
   onSelectBlock: (index: number) => void;
   previewMode?: PreviewMode;
+  onToggleProperties?: () => void;
 }
 
 const EditableBlockCanvas: React.FC<EditableBlockCanvasProps> = ({
@@ -41,6 +36,7 @@ const EditableBlockCanvas: React.FC<EditableBlockCanvasProps> = ({
   selectedIndex,
   onSelectBlock,
   previewMode = 'desktop',
+  onToggleProperties,
 }) => {
   const { blocks } = useBlocksStore();
 
@@ -111,24 +107,18 @@ const EditableBlockCanvas: React.FC<EditableBlockCanvasProps> = ({
 
   return (
     <div className="flex-1 bg-gray-50 overflow-y-auto">
-      <div className={previewMode === 'desktop' 
-        ? "min-h-full" 
-        : "min-h-full px-4 sm:px-6 lg:px-8 py-12 flex items-center justify-center"
-      }>
+      <div className={`min-h-full ${previewMode !== 'desktop' ? 'py-8' : ''}`}>
         <DevicePreview 
-          previewMode={previewMode}
-          animationDuration={ANIMATION_DURATION.normal}
-          easingCurve={EASING_CURVES.smooth}
+          mode={previewMode} 
         >
           <motion.div 
             className={`${getContainerClasses()}`}
             initial={false}
             animate={{
-              opacity: 1,
-              maxWidth: previewMode === 'desktop' ? DEVICE_SIZES[previewMode].width : '100%'
+              opacity: 1
             }}
             transition={{
-              duration: ANIMATION_DURATION.normal,
+              duration: ANIMATION_DURATION.fast,
               ease: EASING_CURVES.smooth
             }}
           >
@@ -155,6 +145,11 @@ const EditableBlockCanvas: React.FC<EditableBlockCanvasProps> = ({
                         onMoveUp={handleMoveUp}
                         onMoveDown={handleMoveDown}
                         onDelete={handleDeleteBlock}
+                        onToggleProperties={onToggleProperties ? (index, event) => {
+                          event.stopPropagation();
+                          onSelectBlock(index);
+                          onToggleProperties();
+                        } : undefined}
                       />
                     )}
                     

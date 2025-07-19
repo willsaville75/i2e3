@@ -98,7 +98,11 @@ export const HERO_PROPERTY_MAPPINGS: PropertyMapping[] = [
     type: 'className',
     target: 'margin-top',
     transform: (value: string) => {
-      return spacing.margin.top[value as keyof typeof spacing.margin.top] || null;
+      const marginClass = spacing.margin.top[value as keyof typeof spacing.margin.top];
+      if (!marginClass && value !== 'none') {
+        console.warn(`Invalid margin-top value: ${value}`);
+      }
+      return marginClass || '';
     },
     selector: 'section'
   },
@@ -107,7 +111,11 @@ export const HERO_PROPERTY_MAPPINGS: PropertyMapping[] = [
     type: 'className',
     target: 'margin-bottom', 
     transform: (value: string) => {
-      return spacing.margin.bottom[value as keyof typeof spacing.margin.bottom] || null;
+      const marginClass = spacing.margin.bottom[value as keyof typeof spacing.margin.bottom];
+      if (!marginClass && value !== 'none') {
+        console.warn(`Invalid margin-bottom value: ${value}`);
+      }
+      return marginClass || '';
     },
     selector: 'section'
   },
@@ -278,7 +286,7 @@ export function applyPropertyMappings(
     
     // Transform the value
     const transformed = mapping.transform(value, blockData);
-    if (!transformed) return;
+    if (!transformed || transformed === '') return;
     
     // Apply based on type and selector
     const targetClasses = mapping.selector === 'content' ? result.contentClasses : result.sectionClasses;

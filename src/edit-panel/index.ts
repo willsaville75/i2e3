@@ -1,4 +1,3 @@
 export { PropertiesPanel } from './PropertiesPanel';
-export { DynamicForm } from './DynamicForm';
-export { PropertySection } from './PropertySection';
-export { FormField } from './FormField'; 
+export { DynamicFormRenderer } from './DynamicFormRenderer';
+export type { DynamicFormRendererProps } from './DynamicFormRenderer'; 

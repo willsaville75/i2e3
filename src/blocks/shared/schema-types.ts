@@ -1,6 +1,21 @@
 /**
  * TypeScript-first schema type definitions
  * This is the single source of truth for all schema types
+ * 
+ * UI Component Mapping:
+ * - string -> Input component from '@/components/ui'
+ * - string with enum -> Select component from '@/components/ui'  
+ * - string with maxLength > 100 -> Textarea component from '@/components/ui'
+ * - number -> Input component with type="number" from '@/components/ui'
+ * - number with enum -> Select component from '@/components/ui'
+ * - boolean -> Checkbox component from '@/components/ui'
+ * - color properties -> Color picker + Input component from '@/components/ui'
+ * - slider type -> HTML range input (custom implementation)
+ * 
+ * All components follow consistent Tailwind patterns with:
+ * - Indigo accent colors for focus states
+ * - Consistent border and shadow styling
+ * - Proper accessibility attributes
  */
 
 // Removed unused imports - spacing and gradient are used in type definitions below
@@ -49,6 +64,33 @@ export interface ArrayProperty extends SchemaProperty {
 
 // Union type for all property types
 export type AnyProperty = StringProperty | NumberProperty | BooleanProperty | ObjectProperty | ArrayProperty
+
+// UI Component type mapping for form generation
+export interface UIComponentMapping {
+  string: 'Input' | 'Textarea' | 'Select'
+  number: 'Input' | 'Select' | 'Slider'
+  boolean: 'Checkbox' | 'Switch'
+  color: 'ColorPicker'
+  object: 'FieldGroup'
+  array: 'ArrayField'
+}
+
+// Helper to determine which UI component to use
+export function getUIComponent(property: AnyProperty): keyof UIComponentMapping {
+  if (property.type === 'string') {
+    if (property.enum) return 'Select' as any
+    if ((property as StringProperty).maxLength && (property as StringProperty).maxLength! > 100) return 'Textarea' as any
+    return 'Input' as any
+  }
+  if (property.type === 'number') {
+    if (property.enum) return 'Select' as any
+    return 'Input' as any
+  }
+  if (property.type === 'boolean') return 'Checkbox' as any
+  if (property.type === 'object') return 'FieldGroup' as any
+  if (property.type === 'array') return 'ArrayField' as any
+  return 'Input' as any
+}
 
 // Layout Schema Interface
 export interface LayoutSchema {

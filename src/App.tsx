@@ -1,12 +1,14 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useBlocksStore } from './store/blocksStore';
 import { BlockRenderer } from './components/BlockRenderer';
 import { SiteRouter } from './components/SiteRouter';
 import { AdminLayout } from './components/AdminLayout';
-import AdminDashboard from './routes/admin';
-import SitesIndex from './routes/admin/sites';
-import SiteDetail from './routes/admin/sites/[siteId]';
-import MediaPage from './routes/admin/media';
+import AdminDashboard from './admin';
+import SitesIndex from './admin/sites';
+import SiteDetail from './admin/sites/[siteId]';
+import MediaPage from './admin/media';
+import { EditModeProvider } from './edit-mode';
 
 // Default home page that shows blocks from the store
 function HomePage() {
@@ -32,7 +34,7 @@ function HomePage() {
 
 export function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
         {/* Default home route */}
         <Route path="/" element={<HomePage />} />
@@ -54,6 +56,6 @@ export function App() {
         {/* Site routing - /:siteSlug/* */}
         <Route path="/:siteSlug/*" element={<SiteRouter />} />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 } 

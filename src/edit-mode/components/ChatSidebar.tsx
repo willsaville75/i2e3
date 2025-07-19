@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ChatContent } from './ChatContent';
 import { ChatInput } from './ChatInput';
 import { useIndyChat } from '../hooks/useIndyChat';
+import { ChatBubbleOvalLeftEllipsisIcon, MinusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface ChatSidebarProps {
   onClose: () => void;
@@ -32,9 +33,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
+            <ChatBubbleOvalLeftEllipsisIcon className="w-5 h-5" />
           </div>
           <div>
             <h2 className="font-semibold">Indy AI Assistant</h2>
@@ -47,18 +46,14 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             className="hover:bg-white/20 p-2 rounded text-white/80 hover:text-white"
             title="Minimize to bubble"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4" />
-            </svg>
+            <MinusIcon className="w-5 h-5" />
           </button>
           <button 
             onClick={onClose}
             className="hover:bg-white/20 p-2 rounded text-white/80 hover:text-white"
             title="Close chat"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
       </div>

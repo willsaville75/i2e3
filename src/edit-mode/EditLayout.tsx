@@ -12,7 +12,7 @@ type PreviewMode = 'desktop' | 'tablet' | 'mobile';
 export default function EditLayout() {
   const { isEditMode } = useEditMode(); // Get edit mode state
   const { selectedIndex, setSelectedIndex } = useBlocksStore(); // Get block selection state
-  const [isPropsOpen, setIsPropsOpen] = useState(false); // Hidden by default
+  const [isPropsOpen, setIsPropsOpen] = useState(false); // Properties panel closed by default
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
 
   console.log('🎯 EditLayout rendered');
@@ -30,31 +30,26 @@ export default function EditLayout() {
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header - Full width at top */}
       <EditHeader 
-        onToggleProps={() => setIsPropsOpen(!isPropsOpen)}
-        isPropsOpen={isPropsOpen}
         previewMode={previewMode}
         onPreviewModeChange={setPreviewMode}
       />
 
       {/* Main Content Area - Below header */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Left Panel - Properties (slides in from left) */}
         <AnimatePresence>
           {isPropsOpen && (
             <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 320, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
+              initial={{ x: -336 }}
+              animate={{ x: 0 }}
+              exit={{ x: -336 }}
               transition={{ 
                 duration: 0.3, 
-                ease: 'easeInOut',
-                opacity: { duration: 0.2 }
+                ease: 'easeInOut'
               }}
-              className="border-r border-gray-200 bg-white shadow-md overflow-hidden"
+              className="w-[21rem] h-full border-r border-gray-200 bg-white shadow-md"
             >
-              <div className="w-80 h-full">
-                <PropertiesPanel />
-              </div>
+              <PropertiesPanel />
             </motion.div>
           )}
         </AnimatePresence>
@@ -67,8 +62,10 @@ export default function EditLayout() {
             onSelectBlock={(index) => {
               setSelectedIndex(index);
               handleBlockSelect();
+              // Don't open properties panel - let Indy handle it
             }}
             previewMode={previewMode}
+            onToggleProperties={() => setIsPropsOpen(!isPropsOpen)}
           />
         </div>
       </div>

@@ -20,17 +20,21 @@ export const spacing = {
   margin: {
     top: {
       none: '',
+      xs: 'mt-2',
       sm: 'mt-4',
       md: 'mt-8',
       lg: 'mt-8', // Special case for hero blocks
-      xl: 'mt-16'
+      xl: 'mt-16',
+      '2xl': 'mt-24'
     },
     bottom: {
       none: '',
+      xs: 'mb-2',
       sm: 'mb-4',
       md: 'mb-8',
       lg: 'mb-8', // Special case for hero blocks
-      xl: 'mb-16'
+      xl: 'mb-16',
+      '2xl': 'mb-24'
     }
   },
   padding: {

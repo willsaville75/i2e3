@@ -18,6 +18,7 @@
     "db:push": "prisma db push"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
     "@prisma/client": "^6.12.0",
     "@types/multer": "^2.0.0",

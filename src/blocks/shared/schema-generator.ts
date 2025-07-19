@@ -466,6 +466,219 @@ function generateBackgroundSection(schema: any): FormSection {
         }
       });
     }
+    
+    // Background Image
+    if (background.image) {
+      const imageProps = background.image.properties;
+      
+      // Image URL
+      if (imageProps?.url) {
+        fields.push({
+          id: 'backgroundImageUrl',
+          label: 'Image URL',
+          type: 'text',
+          path: 'background.image.url',
+          placeholder: 'Enter image URL...',
+          group: 'Image Settings',
+          order: 10,
+          conditional: {
+            field: 'background.type',
+            operator: 'equals',
+            value: 'image'
+          }
+        });
+      }
+      
+      // Mobile Image URL
+      if (imageProps?.mobileUrl) {
+        fields.push({
+          id: 'backgroundImageMobileUrl',
+          label: 'Mobile Image URL',
+          type: 'text',
+          path: 'background.image.mobileUrl',
+          placeholder: 'Enter mobile image URL (optional)...',
+          group: 'Image Settings',
+          order: 11,
+          conditional: {
+            field: 'background.type',
+            operator: 'equals',
+            value: 'image'
+          }
+        });
+      }
+      
+      // Image Position
+      if (imageProps?.position) {
+        fields.push({
+          id: 'backgroundImagePosition',
+          label: 'Image Position',
+          type: 'select',
+          path: 'background.image.position',
+          defaultValue: 'center',
+          options: [
+            { value: 'center', label: 'Center' },
+            { value: 'top', label: 'Top' },
+            { value: 'bottom', label: 'Bottom' },
+            { value: 'left', label: 'Left' },
+            { value: 'right', label: 'Right' }
+          ],
+          group: 'Image Settings',
+          order: 12,
+          conditional: {
+            field: 'background.type',
+            operator: 'equals',
+            value: 'image'
+          }
+        });
+      }
+      
+      // Image Size
+      if (imageProps?.size) {
+        fields.push({
+          id: 'backgroundImageSize',
+          label: 'Image Size',
+          type: 'select',
+          path: 'background.image.size',
+          defaultValue: 'cover',
+          options: [
+            { value: 'cover', label: 'Cover (Fill Container)' },
+            { value: 'contain', label: 'Contain (Fit Inside)' },
+            { value: 'auto', label: 'Auto (Original Size)' }
+          ],
+          group: 'Image Settings',
+          order: 13,
+          conditional: {
+            field: 'background.type',
+            operator: 'equals',
+            value: 'image'
+          }
+        });
+      }
+    }
+    
+    // Background Video
+    if (background.video) {
+      const videoProps = background.video.properties;
+      
+      // Video URL
+      if (videoProps?.url) {
+        fields.push({
+          id: 'backgroundVideoUrl',
+          label: 'Video URL',
+          type: 'text',
+          path: 'background.video.url',
+          placeholder: 'Enter video URL (MP4)...',
+          group: 'Video Settings',
+          order: 20,
+          conditional: {
+            field: 'background.type',
+            operator: 'equals',
+            value: 'video'
+          }
+        });
+      }
+      
+      // Video Poster
+      if (videoProps?.poster) {
+        fields.push({
+          id: 'backgroundVideoPoster',
+          label: 'Video Poster Image',
+          type: 'text',
+          path: 'background.video.poster',
+          placeholder: 'Enter poster image URL (optional)...',
+          group: 'Video Settings',
+          order: 21,
+          conditional: {
+            field: 'background.type',
+            operator: 'equals',
+            value: 'video'
+          }
+        });
+      }
+    }
+    
+    // Background Overlay
+    if (background.overlay) {
+      const overlayProps = background.overlay.properties;
+      
+      // Overlay Enabled
+      if (overlayProps?.enabled) {
+        fields.push({
+          id: 'overlayEnabled',
+          label: 'Enable Overlay',
+          type: 'boolean',
+          path: 'background.overlay.enabled',
+          defaultValue: false,
+          description: 'Add a color overlay on top of the background',
+          group: 'Overlay Settings',
+          order: 30,
+          conditional: {
+            field: 'background.type',
+            operator: 'not_equals',
+            value: 'color'
+          }
+        });
+      }
+      
+      // Overlay Color
+      if (overlayProps?.color) {
+        fields.push({
+          id: 'overlayColor',
+          label: 'Overlay Color',
+          type: 'text',
+          path: 'background.overlay.color',
+          defaultValue: '#000000',
+          placeholder: '#000000',
+          group: 'Overlay Settings',
+          order: 31,
+          conditional: {
+            field: 'background.overlay.enabled',
+            operator: 'equals',
+            value: true
+          }
+        });
+      }
+      
+      // Overlay Opacity
+      if (overlayProps?.opacity) {
+        fields.push({
+          id: 'overlayOpacity',
+          label: 'Overlay Opacity',
+          type: 'slider',
+          path: 'background.overlay.opacity',
+          defaultValue: 0.5,
+          min: 0,
+          max: 1,
+          step: 0.1,
+          group: 'Overlay Settings',
+          order: 32,
+          conditional: {
+            field: 'background.overlay.enabled',
+            operator: 'equals',
+            value: true
+          }
+        });
+      }
+      
+      // Overlay Blur
+      if (overlayProps?.blur) {
+        fields.push({
+          id: 'overlayBlur',
+          label: 'Enable Blur',
+          type: 'boolean',
+          path: 'background.overlay.blur',
+          defaultValue: false,
+          description: 'Apply a blur effect to the background',
+          group: 'Overlay Settings',
+          order: 33,
+          conditional: {
+            field: 'background.overlay.enabled',
+            operator: 'equals',
+            value: true
+          }
+        });
+      }
+    }
   }
   
   return {

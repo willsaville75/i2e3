@@ -6,6 +6,7 @@ import { AdminLayout } from './components/AdminLayout';
 import AdminDashboard from './routes/admin';
 import SitesIndex from './routes/admin/sites';
 import SiteDetail from './routes/admin/sites/[siteId]';
+import MediaPage from './routes/admin/media';
 
 // Default home page that shows blocks from the store
 function HomePage() {
@@ -43,6 +44,9 @@ export function App() {
           {/* Sites management routes */}
           <Route path="sites" element={<SitesIndex />} />
           <Route path="sites/:siteId" element={<SiteDetail />} />
+          
+          {/* Media Library */}
+          <Route path="media" element={<MediaPage />} />
           
           {/* Future admin sub-routes can be added here */}
         </Route>

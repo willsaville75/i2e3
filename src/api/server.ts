@@ -8,6 +8,7 @@ import pageRouter from './routes/page.js'
 import sitesRouter from './routes/cms/sites.js'
 import entriesRouter from './routes/cms/entries.js'
 import blocksRouter from './routes/cms/blocks.js'
+import mediaRouter from './routes/media.js'
 import { prisma } from '../utils/prisma'
 
 // Load environment variables first
@@ -63,6 +64,7 @@ app.use('/api/page', pageRouter)
 app.use('/api/sites', sitesRouter)
 app.use('/api/entries', entriesRouter)
 app.use('/api/blocks', blocksRouter)
+app.use('/api/media', mediaRouter)
 
 // Health check
 app.get('/health', (_req: Request, res: Response) => {

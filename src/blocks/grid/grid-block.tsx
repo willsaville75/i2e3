@@ -12,6 +12,15 @@ interface GridBlockProps extends GridProps {
 export const GridBlock: React.FC<GridBlockProps> = (props) => {
   const { elements, layout, cards = [] } = props;
   
+  // Debug logging
+  console.log('GridBlock props:', {
+    hasElements: !!elements,
+    hasLayout: !!layout,
+    cardsLength: cards.length,
+    cards: cards,
+    firstCardElements: cards[0]?.elements
+  });
+  
   // Get dynamic property mappings for grid block
   const mappings = getPropertyMappings('grid');
   
@@ -103,6 +112,15 @@ interface CardComponentProps {
 
 function CardComponent({ card }: CardComponentProps) {
   const { elements, layout, background, appearance } = card;
+  
+  // Debug logging
+  console.log('CardComponent rendering:', {
+    cardId: card.id,
+    hasElements: !!elements,
+    titleContent: elements?.title?.content,
+    subtitleContent: elements?.subtitle?.content,
+    descriptionContent: elements?.description?.content
+  });
   
   // Default layout values
   const cardLayout = {
@@ -196,132 +214,25 @@ function CardComponent({ card }: CardComponentProps) {
 
   return (
     <div className={cardClasses} style={backgroundStyles}>
-      {/* Card Header - Avatar, Icon, Title, Subtitle */}
-      {elements && (
+      {/* Debug: Show raw content */}
+      {elements?.title?.content && (
+        <h3 className="text-lg font-semibold mb-2">{elements.title.content}</h3>
+      )}
+      {elements?.subtitle?.content && (
+        <p className="text-gray-600 mb-4">{elements.subtitle.content}</p>
+      )}
+      {elements?.description?.content && (
+        <p className="text-gray-700">{elements.description.content}</p>
+      )}
+      
+      {/* Original complex rendering commented out for now */}
+      {/* {elements && (
         (elements.icon?.name || elements.avatar?.src || elements.title?.content || elements.subtitle?.content) && (
           <div className="card-header mb-4">
-            {/* Avatar or Icon */}
-            {elements.avatar?.src && (
-              <div className={`mb-4 ${cardLayout.alignment === 'center' ? 'mx-auto' : cardLayout.alignment === 'right' ? 'ml-auto' : ''} w-24 h-24`}>
-                <ElementRenderer
-                  element={{
-                    type: 'image',
-                    props: {
-                      ...elements.avatar,
-                      className: 'w-full h-full rounded-full object-cover'
-                    }
-                  }}
-                />
-              </div>
-            )}
-            
-            {elements.icon?.name && !elements.avatar?.src && (
-              <div className={`mb-4 ${cardLayout.alignment === 'center' ? 'mx-auto' : cardLayout.alignment === 'right' ? 'ml-auto' : ''} w-fit`}>
-                <ElementRenderer
-                  element={{
-                    type: 'icon',
-                    props: elements.icon
-                  }}
-                />
-              </div>
-            )}
-            
-            {/* Title */}
-            {elements.title?.content && (
-              <ElementRenderer
-                element={{
-                  type: 'title',
-                  props: {
-                    content: elements.title.content,
-                    level: elements.title.level || 3,
-                    weight: 'semibold',
-                    align: cardLayout.alignment as keyof typeof alignment.text
-                  }
-                }}
-                className="mb-2"
-              />
-            )}
-            
-            {/* Subtitle */}
-            {elements.subtitle?.content && (
-              <ElementRenderer
-                element={{
-                  type: 'text',
-                  props: {
-                    content: elements.subtitle.content,
-                    color: 'secondary',
-                    align: cardLayout.alignment as keyof typeof alignment.text
-                  }
-                }}
-              />
-            )}
+            ... rest of the complex rendering ...
           </div>
         )
-      )}
-      
-      {/* Card Content - Description, Image */}
-      {elements && (elements.description?.content || elements.image?.src) && (
-        <div className="card-content mb-4">
-          {elements.image?.src && (
-            <ElementRenderer
-              element={{
-                type: 'image',
-                props: {
-                  ...elements.image,
-                  className: 'w-full mb-4 rounded-md'
-                }
-              }}
-            />
-          )}
-          
-          {elements.description?.content && (
-            <ElementRenderer
-              element={{
-                type: 'text',
-                props: {
-                  content: elements.description.content,
-                  align: cardLayout.alignment as keyof typeof alignment.text
-                }
-              }}
-            />
-          )}
-        </div>
-      )}
-      
-      {/* Card Actions */}
-      {elements && (elements.primaryAction?.text || elements.secondaryAction?.text) && (
-        <div className={`card-actions mt-4 flex gap-4 ${
-          cardLayout.alignment === 'center' ? 'justify-center' : 
-          cardLayout.alignment === 'right' ? 'justify-end' : 
-          'justify-start'
-        }`}>
-          {elements.primaryAction?.text && (
-            <ElementRenderer
-              element={{
-                type: 'button',
-                props: {
-                  ...elements.primaryAction,
-                  variant: elements.primaryAction.variant || 'primary',
-                  size: elements.primaryAction.size || 'md'
-                }
-              }}
-            />
-          )}
-          
-          {elements.secondaryAction?.text && (
-            <ElementRenderer
-              element={{
-                type: 'button',
-                props: {
-                  ...elements.secondaryAction,
-                  variant: elements.secondaryAction.variant || 'outline',
-                  size: elements.secondaryAction.size || 'md'
-                }
-              }}
-            />
-          )}
-        </div>
-      )}
+      )} */}
     </div>
   );
 } 

@@ -355,10 +355,18 @@ function handleBlockUpdates(result: any): void {
     } else if (result.action.type === 'ADD_BLOCK') {
       console.log('🎨 Adding new block via chat:', {
         blockType: result.action.blockType,
-        blockData: result.action.data
+        hasData: !!result.action.data,
+        dataKeys: result.action.data ? Object.keys(result.action.data) : [],
+        fullData: result.action.data
       });
       const { addBlock } = useBlocksStore.getState();
       const blockData = result.action.data || createDefaultBlockData(result.action.blockType);
+      console.log('📦 Final block data being added:', {
+        blockType: result.action.blockType,
+        hasCards: !!(blockData.cards),
+        cardsLength: blockData.cards?.length,
+        blockData
+      });
       const newBlockId = addBlock(result.action.blockType, blockData);
       console.log('✅ Block added successfully with ID:', newBlockId);
       

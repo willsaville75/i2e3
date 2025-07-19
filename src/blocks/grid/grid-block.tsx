@@ -3,111 +3,106 @@ import { GridProps, CardProps } from './schema';
 import { PropertyRenderer } from '../shared/PropertyRenderer';
 import { getPropertyMappings } from '../shared/property-mappings';
 import { ElementRenderer } from '../../components/ElementRenderer';
-import { getResponsiveContainerClasses, getResponsivePaddingClasses } from '../shared/responsiveContainer';
-import { alignment } from '../shared/tokens';
+import { spacing, typography, alignment } from '../shared/tokens';
 
 interface GridBlockProps extends GridProps {
   blockId?: string;
 }
 
-export function GridBlock(props: GridBlockProps) {
-  const { elements, layout, cards } = props;
+export const GridBlock: React.FC<GridBlockProps> = (props) => {
+  const { elements, layout, cards = [] } = props;
   
   // Get dynamic property mappings for grid block
   const mappings = getPropertyMappings('grid');
   
   // Extract grid settings with defaults
-  const gridSettings = layout.grid || {
+  const gridSettings = layout?.grid || {
     columns: { desktop: 3, tablet: 2, mobile: 1 },
     gap: 'lg',
     alignItems: 'stretch'
   };
-
-  // Map gap sizes to Tailwind classes
-  const gapClasses: Record<string, string> = {
-    'none': 'gap-0',
-    'sm': 'gap-2',
-    'md': 'gap-4',
-    'lg': 'gap-6',
-    'xl': 'gap-8',
-    '2xl': 'gap-10'
-  };
-
-  // Map align items to Tailwind classes
-  const alignClasses: Record<string, string> = {
-    'stretch': 'items-stretch',
-    'start': 'items-start',
-    'center': 'items-center',
-    'end': 'items-end'
-  };
-
-  // Get container classes
-  const containerClasses = getResponsiveContainerClasses({
-    contentWidth: layout.contentSettings?.contentWidth || 'wide',
-    fullWidth: layout.blockSettings?.blockWidth || false
-  });
   
-  const paddingClasses = getResponsivePaddingClasses();
+  // Map gap sizes to Tailwind classes
+  const gapClasses = {
+    none: 'gap-0',
+    sm: 'gap-2',
+    md: 'gap-4',
+    lg: 'gap-6',
+    xl: 'gap-8',
+    '2xl': 'gap-12'
+  };
+  
+  // Get text alignment
+  const textAlignment = layout?.contentSettings?.textAlignment || 'center';
+  
+  // Get text color based on background
+  const getTextColorClass = (color?: string) => {
+    if (color && color in typography.color) {
+      return typography.color[color as keyof typeof typography.color];
+    }
+    return typography.color.primary;
+  };
 
   return (
     <PropertyRenderer blockData={props} mappings={mappings}>
-      <div className={containerClasses}>
-        <div className={paddingClasses}>
-          {/* Section Header */}
-          {elements && (elements.sectionTitle || elements.sectionSubtitle) && (
-            <div className="grid-header mb-8 md:mb-12">
-              {elements.sectionTitle && (
-                <ElementRenderer
-                  element={{
-                    type: 'title',
-                    props: {
-                      content: elements.sectionTitle.content,
-                      level: elements.sectionTitle.level,
-                      weight: 'bold',
-                      align: layout.contentSettings?.textAlignment || 'center'
-                    }
-                  }}
-                />
-              )}
-              {elements.sectionSubtitle && (
-                <ElementRenderer
-                  element={{
-                    type: 'text',
-                    props: {
-                      content: elements.sectionSubtitle.content,
-                      size: 'lg',
-                      color: 'secondary',
-                      align: layout.contentSettings?.textAlignment || 'center'
-                    }
-                  }}
-                  className="mt-4"
-                />
-              )}
-            </div>
-          )}
-          
-          {/* Grid of Cards */}
-          <div className={`grid grid-cols-${gridSettings.columns.mobile} md:grid-cols-${gridSettings.columns.tablet} lg:grid-cols-${gridSettings.columns.desktop} ${gapClasses[gridSettings.gap]} ${alignClasses[gridSettings.alignItems]}`}>
-            {cards.map((card) => (
-              <Card 
-                key={card.id} 
-                data={card}
-              />
-            ))}
-          </div>
+      <div className="w-full">
+        {/* Section Title */}
+        {elements?.sectionTitle?.content && (
+          <ElementRenderer
+            element={{
+              type: 'title',
+              props: {
+                content: elements.sectionTitle.content,
+                level: elements.sectionTitle.level || 2,
+                weight: 'bold',
+                color: getTextColorClass(),
+                align: textAlignment as keyof typeof alignment.text || 'center'
+              }
+            }}
+          />
+        )}
+        
+        {/* Section Subtitle */}
+        {elements?.sectionSubtitle?.content && (
+          <ElementRenderer
+            element={{
+              type: 'text',
+              props: {
+                content: elements.sectionSubtitle.content,
+                size: 'lg',
+                color: getTextColorClass(),
+                align: textAlignment as keyof typeof alignment.text || 'center',
+                className: 'mt-4 mb-8'
+              }
+            }}
+          />
+        )}
+        
+        {/* Grid Container */}
+        <div className={`
+          grid
+          grid-cols-${gridSettings.columns.mobile || 1}
+          md:grid-cols-${gridSettings.columns.tablet || 2}
+          lg:grid-cols-${gridSettings.columns.desktop || 3}
+          ${gapClasses[gridSettings.gap as keyof typeof gapClasses] || gapClasses.lg}
+          items-${gridSettings.alignItems || 'stretch'}
+        `}>
+          {cards.map((card) => (
+            <CardComponent key={card.id} card={card} />
+          ))}
         </div>
       </div>
     </PropertyRenderer>
   );
-}
+};
 
 // Card component - like a mini hero block
 interface CardComponentProps {
-  data: CardProps;
+  card: CardProps;
 }
 
-function Card({ data }: CardComponentProps) {
-  const { elements, layout, background, appearance } = data;
+function CardComponent({ card }: CardComponentProps) {
+  const { elements, layout, background, appearance } = card;
   
   // Default layout values
   const cardLayout = {

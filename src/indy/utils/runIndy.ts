@@ -1,7 +1,7 @@
 import { prepareBlockAIContext } from '../../blocks/utils/prepareBlockAIContext';
 import { preparePageAIContext } from '../../blocks/utils/preparePageAIContext';
 import { getFastModel } from '../../ai/client';
-import runIndyBlockAgent from '../agents/runIndyBlockAgent';
+import blockOperations from '../agents/blockOperations';
 import runIndyPageAgent from '../agents/runIndyPageAgent';
 import { ResponseAgentResult } from '../../types/agents';
 
@@ -54,7 +54,6 @@ export async function runIndy(options: RunIndyOptions): Promise<IndyResult> {
     goal, 
     instructions, 
     model = getFastModel(), 
-    target, 
     focusBlockType 
   } = options;
 
@@ -75,12 +74,22 @@ export async function runIndy(options: RunIndyOptions): Promise<IndyResult> {
       );
 
       // Call block agent
-      result = await runIndyBlockAgent({
-        context,
-        model,
-        instructions,
-        target
+      const blockResult = await blockOperations({
+        operation: data.currentData ? 'update' : 'create',
+        blockType: data.blockType,
+        intent: instructions || '',
+        currentData: data.currentData,
+        tokens: data.tokens || {}
       });
+      
+      // Convert blockOperations result to ResponseAgentResult format
+      result = {
+        result: JSON.stringify(blockResult.blockData),
+        raw: JSON.stringify(blockResult.blockData),
+        target: blockResult.selectedBlockType || data.blockType,
+        mode: 'block' as const,
+        success: blockResult.success
+      };
       
       break;
     }

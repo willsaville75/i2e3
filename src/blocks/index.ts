@@ -48,5 +48,14 @@ export type { HeroProps } from './hero/schema';
 export * from './utils';
 export * from './shared';
 
+// Helper function to get available blocks for AI
+export function getAvailableBlocksForAI(): Array<{ type: string; description: string; useCase: string }> {
+  return Object.entries(blockRegistry).map(([type, entry]) => ({
+    type,
+    description: entry.metadata.description,
+    useCase: entry.aiHints.usageContext?.purpose || entry.metadata.hints?.usage || ''
+  }));
+}
+
 // Default export
 export default blockRegistry; 

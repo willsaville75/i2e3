@@ -44,16 +44,6 @@ router.post('/generate', async (req: Request, res: Response) => {
         intent: userInput,
         tokens: tokens || {}
       };
-    } else if (agentName === 'runIndyBlockAgent') {
-      agentInput = {
-        context: {
-          blockType,
-          current: currentData,
-          intent: currentData ? 'update' : 'create'
-        },
-        model: 'gpt-4o-mini',
-        instructions: userInput
-      };
     } else if (agentName === 'runIndyPageAgent') {
       agentInput = {
         context: {
@@ -168,14 +158,11 @@ router.post('/action', async (req: Request, res: Response) => {
         intent: userInput
       };
     } else if (agentName === 'createAgent' && !blockType) {
-      // Extract blockType from user input for create operations
-      const blockTypeMatch = userInput.match(/\b(hero|feature|cta|testimonial|stats|gallery|faq|pricing|team|contact)\b/i);
-      const inferredBlockType = blockTypeMatch ? blockTypeMatch[1].toLowerCase() : 'hero';
-      
-      console.log(`📦 Inferred blockType: ${inferredBlockType} from user input`);
+      // Let AI select the appropriate block type based on user intent
+      console.log(`📦 No blockType specified, letting AI select based on user intent`);
       
       agentInput = {
-        blockType: inferredBlockType,
+        blockType: undefined, // Explicitly undefined to trigger block selection
         currentData: blockData,
         intent: userInput,
         blockId
@@ -225,10 +212,13 @@ router.post('/action', async (req: Request, res: Response) => {
     } else {
       // Check if this is a create/update action based on the agent used
       if (agentName === 'createAgent' || agentName === 'updateAgent') {
+        // Check if AI selected a block type (from blockOperations)
+        const selectedBlockType = result.selectedBlockType || blockType || agentInput.blockType;
+        
         // Generate a user-friendly message based on the action
         const actionType = blockId ? 'UPDATE_BLOCK' : 'ADD_BLOCK';
         const actionVerb = blockId ? 'updated' : 'created';
-        const finalBlockType = blockType || agentInput.blockType || 'block';
+        const finalBlockType = selectedBlockType || 'block';
         const blockTypeDisplay = finalBlockType ? `${finalBlockType} block` : 'block';
         
         let message = `✅ Successfully ${actionVerb} your ${blockTypeDisplay}!`;

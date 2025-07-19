@@ -6,7 +6,7 @@ import { prepareBlockUpdateContext } from '../../blocks/utils/prepareBlockUpdate
 
 export interface BlockOperationInput {
   operation: 'create' | 'update';
-  blockType: string;
+  blockType?: string; // Made optional for AI selection
   intent: string;
   currentData?: any;
   tokens?: Record<string, any>;
@@ -15,6 +15,7 @@ export interface BlockOperationInput {
 export interface BlockOperationOutput {
   success: boolean;
   blockData?: any;
+  selectedBlockType?: string; // Added for when AI selects the block type
   error?: string;
 }
 
@@ -27,7 +28,64 @@ export default async function run(input: BlockOperationInput): Promise<BlockOper
   const { operation, blockType, intent, currentData, tokens = {} } = input;
   
   try {
-    // Validate block type
+    // If no blockType is provided and operation is create, let AI select it
+    if (!blockType && operation === 'create') {
+      // Build prompt for block selection
+      const prompt = buildOpenAIPromptForBlock({
+        blockType: undefined,
+        context: { intent },
+        mode: 'create',
+        instructions: intent
+      });
+      
+      // Call AI to select block type and generate content
+      const response = await callAI({
+        prompt,
+        model: getFastModel(),
+        maxTokens: 800,
+        temperature: 0.2
+      });
+      
+      // Parse response expecting both block selection and content
+      let parsedResponse;
+      try {
+        const cleaned = response
+          .replace(/```json\n?/g, '')
+          .replace(/```\n?/g, '')
+          .trim();
+        parsedResponse = JSON.parse(cleaned);
+      } catch (error) {
+        return {
+          success: false,
+          error: `Failed to parse AI response: ${error}`
+        };
+      }
+      
+      // Validate response has required fields
+      if (!parsedResponse.selectedBlockType || !parsedResponse.blockContent) {
+        return {
+          success: false,
+          error: 'AI response missing selectedBlockType or blockContent'
+        };
+      }
+      
+      console.log(`✅ Block ${operation} with AI-selected type '${parsedResponse.selectedBlockType}' completed in ${Date.now() - startTime}ms`);
+      
+      return {
+        success: true,
+        blockData: parsedResponse.blockContent,
+        selectedBlockType: parsedResponse.selectedBlockType
+      };
+    }
+    
+    // Validate block type for normal operations
+    if (!blockType) {
+      return {
+        success: false,
+        error: 'Block type is required for update operations'
+      };
+    }
+    
     if (!blockRegistry[blockType]) {
       return {
         success: false,

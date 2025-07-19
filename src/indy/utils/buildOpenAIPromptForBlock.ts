@@ -1,8 +1,9 @@
 import { summariseBlockSchemaForAI } from '../../blocks/utils/summariseBlockSchemaForAI';
 import { compressBlockUpdateContextForTarget } from '../../blocks/utils/compressBlockUpdateContextForTarget';
+import { getAvailableBlocksForAI } from '../../blocks';
 
 export interface PromptInput {
-  blockType: string;
+  blockType?: string; // Made optional for block selection
   context: any;
   mode: 'create' | 'update';
   target?: string;
@@ -21,6 +22,34 @@ export interface PromptInput {
  */
 export function buildOpenAIPromptForBlock(input: PromptInput): string {
   const { blockType, context, mode, target, instructions } = input;
+
+  // If no blockType is specified, we need to select one based on user intent
+  if (!blockType) {
+    const availableBlocks = getAvailableBlocksForAI();
+    
+    return `You are an expert UI content assistant. Based on the user's request, select the most appropriate block type AND generate its content.
+
+User Intent: "${instructions}"
+
+Available Block Types:
+${availableBlocks.map(block => `- ${block.type}: ${block.description} (Use for: ${block.useCase})`).join('\n')}
+
+IMPORTANT: Return a JSON object with TWO properties:
+1. "selectedBlockType": The chosen block type (must be one of: ${availableBlocks.map(b => b.type).join(', ')})
+2. "blockContent": The generated content for that block type
+
+Example response format:
+{
+  "selectedBlockType": "hero",
+  "blockContent": {
+    "elements": { ... },
+    "layout": { ... },
+    "background": { ... }
+  }
+}
+
+Select the block type that best matches the user's intent and generate appropriate content.`;
+  }
 
   // Build the base instruction (concise)
   const base = `You are an expert UI content assistant. ${mode === 'create' ? 'Create' : 'Update'} a "${blockType}" block.`;

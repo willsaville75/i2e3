@@ -11,13 +11,11 @@ import runIndyResponseAgent from './runIndyResponseAgent';
  * CONSOLIDATED:
  * - createAgent → blockOperations (operation: 'create')
  * - updateAgent → blockOperations (operation: 'update')
- * - runIndyBlockAgent → blockOperations
  */
 export const agentMap = {
-  // Unified block operations (replaces createAgent, updateAgent, runIndyBlockAgent)
+  // Unified block operations
   createAgent: async (input: any) => blockOperations({ ...input, operation: 'create' }),
   updateAgent: async (input: any) => blockOperations({ ...input, operation: 'update' }),
-  runIndyBlockAgent: async (input: any) => blockOperations({ ...input, operation: input.mode || 'update' }),
   
   // Page and utility agents
   runIndyPageAgent,

@@ -1,14 +1,15 @@
 // Export all agents
-export { default as createAgent } from './createAgent';
-export { default as updateAgent } from './updateAgent';
-export { default as runIndyBlockAgent } from './runIndyBlockAgent';
+export { default as blockOperations } from './blockOperations';
 export { default as runIndyPageAgent } from './runIndyPageAgent';
 export { default as runIndyPromptAgent } from './runIndyPromptAgent';
 export { default as runIndyResponseAgent } from './runIndyResponseAgent';
 export { default as runIndyExecutionAgent } from './runIndyExecutionAgent';
+export { default as runIndyContextAgent } from './runIndyContextAgent';
+export { runSchemaPresenterAgent } from './schemaPresenterAgent';
 
 // Export orchestrator functionality
-export { agentMap, runAgent, classifyIntentToAgent, getAvailableAgents, hasAgent } from './orchestrator';
+export { runAgent, classifyIntentToAgent } from './orchestrator';
+export type { ClassificationResult } from './orchestrator';
 
 // Export agent types from the types module
 export type {

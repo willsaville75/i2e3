@@ -19,7 +19,7 @@ export const BlockActions: React.FC<BlockActionsProps> = ({
   onToggleProperties
 }) => {
   return (
-    <div className="absolute top-5 left-1/2 transform -translate-x-1/2 z-10">
+    <div className="absolute top-5 left-1/2 transform -translate-x-1/2 z-50">
       <span className="isolate inline-flex rounded-md shadow-sm">
         {/* Move Up Button */}
         <button

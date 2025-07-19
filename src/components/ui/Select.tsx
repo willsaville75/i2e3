@@ -38,7 +38,12 @@ export const Select: React.FC<SelectProps> = ({
   id,
   variant = 'dropdown'
 }) => {
-  const selectedOption = options.find(option => option.value === value);
+  // Helper function to compare values (handles string/number conversion)
+  const isSelected = (optionValue: string | number) => {
+    return optionValue === value || String(optionValue) === String(value);
+  };
+  
+  const selectedOption = options.find(option => isSelected(option.value));
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Use native select for better mobile experience or when specified
@@ -237,14 +242,33 @@ export const Select: React.FC<SelectProps> = ({
             >
               <input
                 type="radio"
-                className="sr-only"
-                checked={value === option.value}
-                onChange={() => !disabled && !option.disabled && onChange(option.value)}
+                name={id}
+                value={option.value}
+                checked={isSelected(option.value)}
+                onChange={() => onChange(option.value)}
                 disabled={disabled || option.disabled}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
               />
-              <span className="flex-1">{option.label}</span>
-              {value === option.value && (
-                <CheckIcon className="h-4 w-4 text-indigo-600" />
+              <label 
+                className={clsx(
+                  'ml-3 text-sm font-medium',
+                  isSelected(option.value)
+                    ? 'text-indigo-700'
+                    : 'text-gray-700',
+                  (disabled || option.disabled) && 'text-gray-400'
+                )}
+              >
+                {option.label}
+              </label>
+              {/* Show color/gradient preview if available */}
+              {(option.color || option.gradient) && (
+                <div 
+                  className="ml-auto w-6 h-6 rounded border border-gray-300"
+                  style={isSelected(option.value) ? {
+                    borderColor: 'currentColor',
+                    backgroundColor: 'currentColor'
+                  } : undefined}
+                />
               )}
             </label>
           ))}

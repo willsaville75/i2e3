@@ -1,5 +1,11 @@
+import React from 'react';
+import { Input } from '../components/ui/Input';
+import { Textarea } from '../components/ui/Textarea';
+import { Select } from '../components/ui/Select';
+import { Toggle } from '../components/ui/Toggle';
+import { Slider } from '../components/ui/Slider';
+import { ArrayField } from './array';
 import { FormFieldConfig } from '../blocks/shared/schema-generator';
-import { Input, Textarea, Select, Toggle, Slider } from '../components/ui';
 import { gradient } from '../blocks/shared/tokens';
 
 // Color mappings for swatches
@@ -22,127 +28,119 @@ const getGradientCSS = (gradientName: string): string => {
   return `linear-gradient(${gradient.direction[preset.direction as keyof typeof gradient.direction]}, ${preset.fromColor}, ${preset.toColor})`;
 };
 
+export interface FieldConfig {
+  type: string;
+  label?: string;
+  options?: Array<{ value: string; label: string }>;
+  min?: number;
+  max?: number;
+  step?: number;
+  itemType?: string;
+  itemLabel?: string;
+  itemSchema?: Record<string, any>;
+  defaultValue?: any;
+  path?: string[];
+}
+
 /**
  * Renders the appropriate input component based on field type
  */
-export const renderFieldInput = (field: FormFieldConfig, value: any, onChange: (value: any) => void) => {
-  switch (field.type) {
+export const renderField = (
+  type: string,
+  props: any,
+  fieldConfig?: FieldConfig
+) => {
+  // For input-based components, we need to extract the value from the event
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (props.onChange) {
+      props.onChange(e.target.value);
+    }
+  };
+
+  switch (type) {
+    case 'string':
     case 'text':
-      return (
-        <Input
-          id={field.id}
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
-        />
-      );
-
-    case 'textarea':
-      return (
-        <Textarea
-          id={field.id}
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
-          rows={3}
-          resize="none"
-        />
-      );
-
+    case 'url':
+    case 'email':
+      return <Input {...props} onChange={handleInputChange} type={type === 'email' ? 'email' : type === 'url' ? 'url' : 'text'} />;
+    
     case 'number':
-      return (
-        <Input
-          id={field.id}
-          type="number"
-          value={value || ''}
-          onChange={(e) => onChange(Number(e.target.value))}
-          min={field.min}
-          max={field.max}
-          step={field.step}
-        />
-      );
-
+      return <Input {...props} onChange={handleInputChange} type="number" />;
+    
+    case 'textarea':
+      return <Textarea {...props} onChange={handleInputChange} rows={4} />;
+    
     case 'select':
-      // Check if this is a color or gradient field
-      const isColorField = field.id?.includes('color') || field.id?.includes('Color');
-      const isGradientField = field.id?.includes('gradient') || field.id?.includes('Gradient');
-      
-      return (
-        <Select
-          id={field.id}
-          value={value || ''}
-          onChange={onChange}
-          options={field.options?.map(opt => {
-            const option: any = {
-              value: opt.value,
-              label: opt.label
-            };
-            
-            // Add color swatch for color fields
-            if (isColorField && colorMap[opt.value]) {
-              option.color = colorMap[opt.value];
-            }
-            
-            // Add gradient swatch for gradient fields
-            if (isGradientField) {
-              const gradientCSS = getGradientCSS(opt.value);
-              if (gradientCSS) {
-                option.gradient = gradientCSS;
-              }
-            }
-            
-            return option;
-          }) || []}
-          placeholder={field.placeholder || 'Select an option'}
-        />
-      );
-
+      return <Select {...props} />;
+    
     case 'boolean':
-      return (
-        <Toggle
-          id={field.id}
-          checked={value || false}
-          onChange={onChange}
-          label={field.label}
-          description={field.description}
-        />
-      );
-
+    case 'toggle':
+      return <Toggle {...props} checked={props.value} onChange={(checked) => props.onChange(checked)} />;
+    
     case 'slider':
       return (
         <Slider
-          id={field.id}
-          value={value || field.defaultValue || field.min || 0}
-          onChange={(e) => onChange(Number(e.target.value))}
-          min={field.min}
-          max={field.max}
-          step={field.step}
+          {...props}
+          min={fieldConfig?.min || 0}
+          max={fieldConfig?.max || 100}
+          step={fieldConfig?.step || 1}
         />
       );
-
+    
+    case 'array':
+      return (
+        <ArrayField
+          {...props}
+          fieldConfig={fieldConfig || {}}
+          path={props.path || []}
+        />
+      );
+    
     case 'color':
-      return (
-        <div className="flex items-center space-x-2">
-          <input
-            type="color"
-            value={value || '#000000'}
-            onChange={(e) => onChange(e.target.value)}
-            className="h-8 w-8 rounded border border-gray-300 cursor-pointer"
-          />
-          <Input
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="#000000"
-          />
-        </div>
-      );
-
+      return <Input {...props} onChange={handleInputChange} type="color" />;
+    
+    case 'date':
+      return <Input {...props} onChange={handleInputChange} type="date" />;
+    
+    case 'time':
+      return <Input {...props} onChange={handleInputChange} type="time" />;
+    
+    case 'datetime':
+      return <Input {...props} onChange={handleInputChange} type="datetime-local" />;
+    
     default:
-      return (
-        <Input
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      );
+      return <Input {...props} placeholder={`Unsupported type: ${type}`} disabled />;
   }
+};
+
+/**
+ * Legacy function for backward compatibility
+ */
+export const renderFieldInput = (field: FormFieldConfig, value: any, onChange: (value: any) => void) => {
+  const fieldConfig: FieldConfig = {
+    type: field.type,
+    label: field.label,
+    options: field.options,
+    min: field.min,
+    max: field.max,
+    step: field.step,
+    defaultValue: field.defaultValue,
+    itemType: field.itemType,
+    itemLabel: field.itemLabel,
+    itemSchema: field.itemSchema
+  };
+
+  const props = {
+    id: field.id,
+    value,
+    onChange,
+    placeholder: field.placeholder,
+    label: field.label,
+    description: field.description,
+    options: field.options,
+    // Add path prop - convert string to array if needed
+    path: Array.isArray(field.path) ? field.path : [field.path]
+  };
+
+  return renderField(field.type, props, fieldConfig);
 }; 

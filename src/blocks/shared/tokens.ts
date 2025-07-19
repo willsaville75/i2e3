@@ -59,6 +59,7 @@ export const sizing = {
   height: {
     auto: 'min-h-0',
     quarter: 'min-h-[25vh]',
+    third: 'min-h-[33vh]',
     half: 'min-h-[50vh]',
     screen: 'min-h-screen'
   }

@@ -136,3 +136,62 @@ export async function callAIDetailed(input: CallAIInput): Promise<CallAIResponse
     throw error;
   }
 } 
+
+/**
+ * Streaming version of callAI that provides real-time responses
+ */
+export async function callAIStream(
+  input: CallAIInput,
+  onChunk: (chunk: string) => void
+): Promise<string> {
+  const { 
+    prompt, 
+    model = getDefaultModel(), 
+    maxTokens = 1000, 
+    temperature = 0.7,
+    systemMessage = 'You are an expert web developer creating structured block configurations for an intranet builder.'
+  } = input;
+  
+  if (!isOpenAIConfigured()) {
+    throw new Error('OpenAI is not configured. Please set OPENAI_API_KEY environment variable.');
+  }
+  
+  try {
+    const client = await createOpenAIClient();
+    
+    const stream = await client.chat.completions.create({
+      model,
+      messages: [
+        {
+          role: 'system',
+          content: systemMessage
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_tokens: maxTokens,
+      temperature,
+      stream: true  // Enable streaming
+    });
+    
+    let fullContent = '';
+    
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || '';
+      if (content) {
+        fullContent += content;
+        onChunk(content);  // Send each chunk to the callback
+      }
+    }
+    
+    return fullContent;
+    
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Unknown error occurred during streaming AI call');
+  }
+} 

@@ -71,5 +71,25 @@ export const heroAIHints = {
         button: "Medium size, semi-bold (lg-xl)"
       }
     }
+  },
+  layoutBestPractices: {
+    mobileFirst: "Design for mobile screens first, then enhance for larger viewports",
+    contentHierarchy: "Maintain clear visual hierarchy with proper spacing and sizing",
+    readability: "Ensure text is readable against background with sufficient contrast"
+  },
+  backgroundGuidance: {
+    colorVsGradient: {
+      useGradient: [
+        "When user mentions gradient names: sunset, ocean, purple, forest, fire, sky, rose, mint",
+        "When user asks for 'gradient' explicitly",
+        "When user wants dynamic or vibrant backgrounds"
+      ],
+      useColor: [
+        "When user mentions solid color names: blue, red, green, yellow, purple, pink, gray, black, white",
+        "When user asks for 'solid' or 'simple' background",
+        "When minimalism is preferred"
+      ]
+    },
+    importantNote: "If user mentions 'mint', 'sunset', 'ocean', etc., these are GRADIENT presets, not colors. Set type='gradient' and gradient='mint', NOT type='color'."
   }
 }; 

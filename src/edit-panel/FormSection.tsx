@@ -8,16 +8,29 @@ import {
   Square2StackIcon 
 } from '@heroicons/react/24/outline';
 import { getNestedValue } from '../blocks/shared/property-mappings';
-import { renderFieldInput } from './fieldRenderers';
+import { renderField, renderFieldInput } from './fieldRenderers';
 import { isFieldVisible } from './fieldVisibility';
 import { CollapsibleFieldGroup } from './CollapsibleFieldGroup';
 
+// Simple field interface for direct field rendering
+interface SimpleField {
+  key: string;
+  label: string;
+  type: string;
+  value: any;
+  options?: Array<{ value: string; label: string }>;
+  onChange: (value: any) => void;
+  placeholder?: string;
+}
+
 interface FormSectionProps {
-  section: FormSectionType;
-  blockData: any;
-  onChange: (path: string, value: any) => void;
-  isExpanded: boolean;
-  onToggle: () => void;
+  section?: FormSectionType;
+  fields?: SimpleField[];
+  blockData?: any;
+  onChange?: (path: string, value: any) => void;
+  isExpanded?: boolean;
+  onToggle?: () => void;
+  path?: string[];
 }
 
 // Get icon and color based on section title
@@ -62,11 +75,45 @@ const getSectionConfig = (title: string) => {
 
 export const FormSection: React.FC<FormSectionProps> = ({
   section,
+  fields,
   blockData,
   onChange,
-  isExpanded,
-  onToggle
+  isExpanded = true,
+  onToggle,
+  path
 }) => {
+  // If fields array is provided, render simple fields without section wrapper
+  if (fields) {
+    return (
+      <div className="space-y-4">
+        {fields.map((field) => (
+          <div key={field.key}>
+            <label htmlFor={field.key} className="block text-sm font-medium text-gray-700">
+              {field.label}
+            </label>
+            <div className="mt-1">
+              {renderFieldInput(
+                {
+                  id: field.key,
+                  type: field.type,
+                  label: '', // Don't pass label since we render it above
+                  options: field.options,
+                  path: field.key,
+                  placeholder: field.placeholder
+                } as FormFieldConfig,
+                field.value,
+                field.onChange
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Original section-based rendering
+  if (!section) return null;
+  
   const visibleFields = section.fields.filter(field => isFieldVisible(field, blockData));
   const sectionConfig = getSectionConfig(section.title);
   const Icon = sectionConfig.icon;
@@ -84,11 +131,15 @@ export const FormSection: React.FC<FormSectionProps> = ({
   }, {} as Record<string, FormFieldConfig[]>);
 
   const renderField = (field: FormFieldConfig) => {
-    const value = getNestedValue(blockData, field.path);
+    // Convert path array to string if needed
+    const pathString = Array.isArray(field.path) ? field.path.join('.') : field.path;
+    const value = getNestedValue(blockData, pathString);
     const displayValue = value !== undefined ? value : field.defaultValue;
 
     const handleChange = (newValue: any) => {
-      onChange(field.path, newValue);
+      if (onChange) {
+        onChange(pathString, newValue);
+      }
     };
 
     // For boolean fields (toggle), the component handles its own label
@@ -131,7 +182,7 @@ export const FormSection: React.FC<FormSectionProps> = ({
           "transition-colors duration-150",
           sectionConfig.bgColor
         )}
-        onClick={() => section.collapsible && onToggle()}
+        onClick={() => section.collapsible && onToggle?.()}
         aria-expanded={section.collapsible ? isExpanded : undefined}
       >
         <div className="flex items-start space-x-3">
@@ -165,7 +216,7 @@ export const FormSection: React.FC<FormSectionProps> = ({
       >
         {Object.entries(fieldGroups).map(([groupName, fields], groupIndex) => {
           // Use collapsible groups for Content, Layout, and Background sections
-          if ((section.id === 'content' || section.id === 'layout' || section.id === 'background') && groupName !== 'General') {
+          if ((section.id === 'content' || section.id === 'layout' || section.id === 'background') && groupName !== 'General' && onChange) {
             return (
               <div key={groupName} className={clsx(groupIndex > 0 && "mt-4")}>
                 <CollapsibleFieldGroup

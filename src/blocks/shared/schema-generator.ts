@@ -6,12 +6,13 @@
  */
 
 import { PropertyMapping, getPropertyMappings } from './property-mappings';
+import { spacing, colors, gradient, borders, shadows, container, sizing, button } from './tokens';
 
 export interface FormFieldConfig {
   id: string;
   label: string;
-  type: 'text' | 'number' | 'select' | 'boolean' | 'color' | 'textarea' | 'slider' | 'group';
-  path: string;                    // Property path in block data
+  type: 'text' | 'number' | 'select' | 'boolean' | 'color' | 'textarea' | 'slider' | 'group' | 'array' | 'string';
+  path: string | string[];         // Property path in block data - can be string or array
   defaultValue?: any;
   options?: SelectOption[];        // For select fields
   min?: number;                    // For number/slider fields
@@ -23,6 +24,9 @@ export interface FormFieldConfig {
   conditional?: ConditionalRule;   // Show/hide based on other fields
   group?: string;                  // Group name for organization
   order?: number;                  // Display order
+  itemType?: string;               // For array fields - type of items (e.g., 'card')
+  itemLabel?: string;              // For array fields - label for items
+  itemSchema?: Record<string, any>; // For array fields - schema of items
 }
 
 export interface SelectOption {
@@ -356,12 +360,7 @@ function generateContentSection(schema: any): FormSection {
           type: 'select',
           path: 'elements.button.size',
           defaultValue: 'lg',
-          options: [
-            { value: 'sm', label: 'Small' },
-            { value: 'md', label: 'Medium' },
-            { value: 'lg', label: 'Large' },
-            { value: 'xl', label: 'Extra Large' }
-          ],
+          options: getButtonSizeOptions(),
           group: 'Button',
           order: 23
         });
@@ -733,39 +732,41 @@ function formatBackgroundTypeLabel(value: string): string {
 }
 
 function getSpacingOptions(): SelectOption[] {
-  return [
-    { value: 'none', label: 'None' },
-    { value: 'xs', label: 'Extra Small' },
-    { value: 'sm', label: 'Small' },
-    { value: 'md', label: 'Medium' },
-    { value: 'lg', label: 'Large' },
-    { value: 'xl', label: 'Extra Large' },
-    { value: '2xl', label: '2X Large' }
-  ];
+  // Dynamically generate options from spacing tokens
+  return Object.keys(spacing.map).map(key => ({
+    value: key,
+    label: key === 'none' ? 'None' : 
+           key === 'xs' ? 'Extra Small' :
+           key === 'sm' ? 'Small' :
+           key === 'md' ? 'Medium' :
+           key === 'lg' ? 'Large' :
+           key === 'xl' ? 'Extra Large' :
+           key === '2xl' ? '2X Large' : key
+  }));
 }
 
 function getColorOptions(): SelectOption[] {
-  return [
-    { value: 'blue', label: 'Blue' },
-    { value: 'red', label: 'Red' },
-    { value: 'green', label: 'Green' },
-    { value: 'yellow', label: 'Yellow' },
-    { value: 'purple', label: 'Purple' },
-    { value: 'pink', label: 'Pink' },
-    { value: 'gray', label: 'Gray' },
-    { value: 'neutral', label: 'Neutral' }
-  ];
+  // Dynamically generate options from color tokens
+  return Object.keys(colors.scheme).map(key => ({
+    value: key,
+    label: key.charAt(0).toUpperCase() + key.slice(1)
+  }));
 }
 
 function getGradientOptions(): SelectOption[] {
-  return [
-    { value: 'sunset', label: 'Sunset' },
-    { value: 'ocean', label: 'Ocean' },
-    { value: 'purple', label: 'Purple' },
-    { value: 'forest', label: 'Forest' },
-    { value: 'fire', label: 'Fire' },
-    { value: 'sky', label: 'Sky' },
-    { value: 'rose', label: 'Rose' },
-    { value: 'mint', label: 'Mint' }
-  ];
+  // Dynamically generate options from gradient presets
+  return Object.keys(gradient.presets).map(key => ({
+    value: key,
+    label: gradient.presets[key as keyof typeof gradient.presets].name
+  }));
+}
+
+function getButtonSizeOptions(): SelectOption[] {
+  // Dynamically generate options from button size tokens
+  return Object.keys(button.size).map(key => ({
+    value: key,
+    label: key === 'sm' ? 'Small' :
+           key === 'md' ? 'Medium' :
+           key === 'lg' ? 'Large' : key
+  }));
 } 

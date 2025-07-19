@@ -1,47 +1,59 @@
 import React, { useMemo } from 'react';
-import { useBlocksStore } from '../store/blocksStore';
-import { DynamicFormRenderer } from './DynamicFormRenderer';
-import { generateFormConfig } from '../blocks/shared/schema-generator';
-import { setNestedValue } from '../blocks/shared/property-mappings';
-import { heroSchema } from '../blocks/hero/schema';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
+import { DynamicFormRenderer } from './DynamicFormRenderer';
+import { generateFormSections } from '../blocks/shared/schema-to-form';
+import { heroSchema } from '../blocks/hero/schema';
+import { gridSchema } from '../blocks/grid/schema';
+import { setNestedValue } from '../blocks/shared/property-mappings';
+import { useBlocksStore } from '../store/blocksStore';
 
 /**
- * Properties Panel - Schema-Driven Dynamic Form
+ * Properties Panel Component
  * 
- * This component now uses the schema-driven form system to auto-generate
- * form fields based on block schema definitions
+ * Displays and allows editing of selected block properties
+ * Generates dynamic form fields based on block schema definitions
  */
 export const PropertiesPanel: React.FC = () => {
   const { selectedIndex, blocks, updateBlock } = useBlocksStore();
   const selectedBlock = selectedIndex !== null ? blocks[selectedIndex] : null;
   
-  console.log('🔍 PropertiesPanel rendering', { selectedIndex, selectedBlock });
-
-  // Generate form configuration from schema
-  const formSections = useMemo(() => {
-    if (!selectedBlock) return [];
-    
-    // Get schema for the selected block type
-    const schema = getSchemaForBlockType(selectedBlock.blockType);
-    if (!schema) return [];
-    
-    // Generate form configuration
-    return generateFormConfig(selectedBlock.blockType, schema);
-  }, [selectedBlock]);
+  // Get schema for the selected block type
+  const blockSchema = selectedBlock ? getSchemaForBlockType(selectedBlock.blockType) : null;
+  
+  // Generate form sections from schema
+  const formSections = blockSchema ? generateFormSections(blockSchema) : [];
+  
+  // Debug logging
+  console.log('🔍 PropertiesPanel rendering', {
+    selectedBlock: selectedBlock?.blockType,
+    hasSchema: !!blockSchema,
+    sectionsCount: formSections.length,
+    sections: formSections,
+    blockData: selectedBlock?.blockData
+  });
 
   const handleFieldChange = (path: string, value: any) => {
     if (!selectedBlock || selectedIndex === null) return;
     
-    console.log('🔧 Properties Panel: Field changed', { path, value });
+    console.log('🔧 Properties Panel: Field changed', { 
+      path, 
+      value,
+      selectedIndex,
+      blockType: selectedBlock.blockType,
+      currentValue: selectedBlock.blockData
+    });
     
-    // Create a deep copy of the block data
+    // Create a copy of the block data
     const updatedBlockData = JSON.parse(JSON.stringify(selectedBlock.blockData));
     
     // Set the nested value
     setNestedValue(updatedBlockData, path, value);
     
-    console.log('🔧 Properties Panel: Updated block data', updatedBlockData);
+    console.log('🔧 Properties Panel: Updated block data', {
+      path,
+      oldValue: selectedBlock.blockData,
+      newValue: updatedBlockData
+    });
     
     // Update the block in the store
     updateBlock(selectedIndex, updatedBlockData);
@@ -90,6 +102,8 @@ function getSchemaForBlockType(blockType: string): any {
   switch (blockType) {
     case 'hero':
       return heroSchema;
+    case 'grid':
+      return gridSchema;
     default:
       console.warn(`No schema found for block type: ${blockType}`);
       return null;

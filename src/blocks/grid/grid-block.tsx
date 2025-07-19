@@ -3,7 +3,25 @@ import { GridProps, CardProps } from './schema';
 import { PropertyRenderer } from '../shared/PropertyRenderer';
 import { getPropertyMappings } from '../shared/property-mappings';
 import { ElementRenderer } from '../../components/ElementRenderer';
-import { spacing, typography, alignment } from '../shared/tokens';
+import { 
+  spacing, 
+  typography, 
+  alignment, 
+  shadows, 
+  borders, 
+  colors,
+  sizing,
+  image as imageTokens,
+  gradient,
+  createGradientStyle,
+  createTailwindGradient
+} from '../shared/tokens';
+import {
+  getResponsiveContainerClasses,
+  getResponsivePaddingClasses,
+  getBlockWrapperClasses,
+  getTextAlignmentClasses
+} from '../shared/responsiveContainer';
 
 interface GridBlockProps extends GridProps {
   blockId?: string;
@@ -37,14 +55,14 @@ export const GridBlock: React.FC<GridBlockProps> = (props) => {
     alignItems: 'stretch'
   };
   
-  // Map gap sizes to Tailwind classes
+  // Map gap sizes using spacing tokens
   const gapClasses = {
     none: 'gap-0',
-    sm: 'gap-2',
-    md: 'gap-4',
-    lg: 'gap-6',
-    xl: 'gap-8',
-    '2xl': 'gap-12'
+    sm: `gap-${spacing.map.sm}`,
+    md: `gap-${spacing.map.md}`,
+    lg: `gap-${spacing.map.lg}`,
+    xl: `gap-${spacing.map.xl}`,
+    '2xl': `gap-${spacing.map['2xl']}`
   };
   
   // Get text alignment
@@ -60,51 +78,59 @@ export const GridBlock: React.FC<GridBlockProps> = (props) => {
 
   return (
     <PropertyRenderer blockData={props} mappings={mappings}>
-      <div className="w-full">
-        {/* Section Title */}
-        {elements?.sectionTitle?.content && (
-          <ElementRenderer
-            element={{
-              type: 'title',
-              props: {
-                content: elements.sectionTitle.content,
-                level: elements.sectionTitle.level || 2,
-                weight: 'bold',
-                color: getTextColorClass(),
-                align: textAlignment as keyof typeof alignment.text || 'center'
-              }
-            }}
-          />
-        )}
-        
-        {/* Section Subtitle */}
-        {elements?.sectionSubtitle?.content && (
-          <ElementRenderer
-            element={{
-              type: 'text',
-              props: {
-                content: elements.sectionSubtitle.content,
-                size: 'lg',
-                color: getTextColorClass(),
-                align: textAlignment as keyof typeof alignment.text || 'center',
-                className: 'mt-4 mb-8'
-              }
-            }}
-          />
-        )}
-        
-        {/* Grid Container */}
-        <div className={`
-          grid
-          grid-cols-${gridSettings.columns.mobile || 1}
-          md:grid-cols-${gridSettings.columns.tablet || 2}
-          lg:grid-cols-${gridSettings.columns.desktop || 3}
-          ${gapClasses[gridSettings.gap as keyof typeof gapClasses] || gapClasses.lg}
-          items-${gridSettings.alignItems || 'stretch'}
-        `}>
-          {cards.map((card) => (
-            <CardComponent key={card.id} card={card} />
-          ))}
+      <div className={getBlockWrapperClasses({ fullWidth: layout?.blockSettings?.blockWidth })}>
+        <div className={getResponsiveContainerClasses({ 
+          fullWidth: layout?.blockSettings?.blockWidth,
+          contentWidth: layout?.contentSettings?.contentWidth || 'wide',
+          padding: false
+        })}>
+          <div className={getResponsivePaddingClasses()}>
+            {/* Section Title */}
+            {elements?.sectionTitle?.content && (
+              <ElementRenderer
+                element={{
+                  type: 'title',
+                  props: {
+                    content: elements.sectionTitle.content,
+                    level: elements.sectionTitle.level || 2,
+                    weight: 'bold',
+                    color: getTextColorClass(),
+                    align: textAlignment as keyof typeof alignment.text || 'center'
+                  }
+                }}
+              />
+            )}
+            
+            {/* Section Subtitle */}
+            {elements?.sectionSubtitle?.content && (
+              <ElementRenderer
+                element={{
+                  type: 'text',
+                  props: {
+                    content: elements.sectionSubtitle.content,
+                    size: 'lg',
+                    color: getTextColorClass(),
+                    align: textAlignment as keyof typeof alignment.text || 'center',
+                    className: `${spacing.margin.top.sm} ${spacing.margin.bottom.lg}`
+                  }
+                }}
+              />
+            )}
+            
+            {/* Grid Container */}
+            <div className={`
+              grid
+              grid-cols-${gridSettings.columns.mobile || 1}
+              md:grid-cols-${gridSettings.columns.tablet || 2}
+              lg:grid-cols-${gridSettings.columns.desktop || 3}
+              ${gapClasses[gridSettings.gap as keyof typeof gapClasses] || gapClasses.lg}
+              items-${gridSettings.alignItems || 'stretch'}
+            `}>
+              {cards.map((card) => (
+                <CardComponent key={card.id} card={card} />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </PropertyRenderer>
@@ -137,51 +163,32 @@ function CardComponent({ card }: CardComponentProps) {
     alignment: layout?.alignment || 'left'
   };
 
-  // Map padding to Tailwind classes
+  // Map padding using spacing tokens
   const paddingClasses: Record<string, string> = {
     'none': 'p-0',
-    'sm': 'p-4',
-    'md': 'p-6',
-    'lg': 'p-8',
-    'xl': 'p-10'
+    'sm': `p-${spacing.map.sm}`,
+    'md': `p-${spacing.map.md}`,
+    'lg': `p-${spacing.map.lg}`,
+    'xl': `p-${spacing.map.xl}`
   };
 
-  // Map alignment to Tailwind classes
-  const alignmentClasses: Record<string, string> = {
-    'left': 'text-left',
-    'center': 'text-center',
-    'right': 'text-right'
-  };
+  // Use text alignment from responsiveContainer
+  const textAlignmentClass = getTextAlignmentClasses(cardLayout.alignment);
 
-  // Build appearance classes
+  // Build appearance classes using tokens
   const appearanceClasses: string[] = [];
-  if (appearance?.shadow) {
-    const shadowMap: Record<string, string> = {
-      'none': '',
-      'sm': 'shadow-sm',
-      'md': 'shadow-md',
-      'lg': 'shadow-lg',
-      'xl': 'shadow-xl'
-    };
-    if (shadowMap[appearance.shadow]) {
-      appearanceClasses.push(shadowMap[appearance.shadow]);
-    }
+  
+  // Use shadow tokens
+  if (appearance?.shadow && appearance.shadow in shadows) {
+    appearanceClasses.push(shadows[appearance.shadow as keyof typeof shadows]);
   }
   
-  if (appearance?.borderRadius) {
-    const radiusMap: Record<string, string> = {
-      'none': '',
-      'sm': 'rounded-sm',
-      'md': 'rounded-md',
-      'lg': 'rounded-lg',
-      'xl': 'rounded-xl',
-      'full': 'rounded-full'
-    };
-    if (radiusMap[appearance.borderRadius]) {
-      appearanceClasses.push(radiusMap[appearance.borderRadius]);
-    }
+  // Use border radius tokens
+  if (appearance?.borderRadius && appearance.borderRadius in borders.radius) {
+    appearanceClasses.push(borders.radius[appearance.borderRadius as keyof typeof borders.radius]);
   }
 
+  // Handle borders with tokens
   if (appearance?.borderWidth && appearance.borderWidth !== 'none') {
     const borderMap: Record<string, string> = {
       'thin': 'border',
@@ -196,13 +203,33 @@ function CardComponent({ card }: CardComponentProps) {
     }
   }
 
-  // Build background styles
+  // Build background styles using tokens
   let backgroundStyles: React.CSSProperties = {};
+  let backgroundClasses: string[] = [];
+  
   if (background) {
-    if (background.type === 'color') {
-      const colorClass = `bg-${background.color}-${background.colorIntensity || '500'}`;
-      appearanceClasses.push(colorClass);
+    if (background.type === 'color' && background.color) {
+      // Use color tokens
+      const colorScheme = background.color as keyof typeof colors.scheme;
+      const intensity = background.colorIntensity || 'medium';
+      const intensityValue = colors.intensity[intensity as keyof typeof colors.intensity] || '500';
+      
+      if (colorScheme in colors.scheme) {
+        const colorMap = colors.scheme[colorScheme];
+        const colorClass = colorMap[intensityValue as keyof typeof colorMap];
+        if (colorClass) {
+          backgroundClasses.push(colorClass);
+        }
+      }
+    } else if (background.type === 'gradient' && background.gradient) {
+      // Use gradient tokens
+      if (background.gradient in gradient.presets) {
+        backgroundStyles = createGradientStyle({
+          preset: background.gradient as keyof typeof gradient.presets
+        });
+      }
     } else if (background.type === 'image' && background.image) {
+      // Use image tokens for positioning
       backgroundStyles = {
         backgroundImage: `url(${background.image.url})`,
         backgroundSize: background.image.size || 'cover',
@@ -210,37 +237,50 @@ function CardComponent({ card }: CardComponentProps) {
       };
     }
   } else {
-    appearanceClasses.push('bg-white');
+    backgroundClasses.push(colors.scheme.white['50']);
   }
 
   const cardClasses = [
     'card',
     paddingClasses[cardLayout.padding],
-    alignmentClasses[cardLayout.alignment],
-    ...appearanceClasses
+    textAlignmentClass,
+    ...appearanceClasses,
+    ...backgroundClasses
   ].join(' ');
 
   return (
     <div className={cardClasses} style={backgroundStyles}>
-      {/* Debug: Show raw content */}
-      {elements?.title?.content && (
-        <h3 className="text-lg font-semibold mb-2">{elements.title.content}</h3>
-      )}
-      {elements?.subtitle?.content && (
-        <p className="text-gray-600 mb-4">{elements.subtitle.content}</p>
-      )}
-      {elements?.description?.content && (
-        <p className="text-gray-700">{elements.description.content}</p>
+      {/* Avatar */}
+      {elements?.avatar?.src && (
+        <div className={`flex justify-center ${spacing.margin.bottom.md}`}>
+          <img 
+            src={elements.avatar.src} 
+            alt={elements.avatar.alt || ''} 
+            className={`w-${sizing.general.lg} h-${sizing.general.lg} ${borders.radius.full} object-cover`}
+          />
+        </div>
       )}
       
-      {/* Original complex rendering commented out for now */}
-      {/* {elements && (
-        (elements.icon?.name || elements.avatar?.src || elements.title?.content || elements.subtitle?.content) && (
-          <div className="card-header mb-4">
-            ... rest of the complex rendering ...
-          </div>
-        )
-      )} */}
+      {/* Title */}
+      {elements?.title?.content && (
+        <h3 className={`${typography.size.lg} ${typography.weight.semibold} ${spacing.margin.bottom.sm}`}>
+          {elements.title.content}
+        </h3>
+      )}
+      
+      {/* Subtitle */}
+      {elements?.subtitle?.content && (
+        <p className={`${typography.color.secondary} ${spacing.margin.bottom.md}`}>
+          {elements.subtitle.content}
+        </p>
+      )}
+      
+      {/* Description */}
+      {elements?.description?.content && (
+        <p className={typography.color.primary}>
+          {elements.description.content}
+        </p>
+      )}
     </div>
   );
 } 

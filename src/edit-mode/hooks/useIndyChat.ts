@@ -109,13 +109,18 @@ export const useIndyChat = (): UseIndyChatReturn => {
         };
         addMessage(userMsg);
 
-        // Prepare API request
+        // Check if this is a create operation
+        const isCreatingBlock = userMessage.toLowerCase().includes('create') || 
+                               userMessage.toLowerCase().includes('add') ||
+                               userMessage.toLowerCase().includes('new');
+        
+        // Prepare API request - don't pass blockId for create operations
         const requestBody = {
           userInput: userMessage,
           sessionId: sessionId,
-          blockId: selectedIndex !== null ? blocks[selectedIndex]?.id : undefined,
-          blockType: selectedIndex !== null ? blocks[selectedIndex]?.blockType : undefined,
-          blockData: selectedIndex !== null ? blocks[selectedIndex]?.blockData : undefined,
+          blockId: (selectedIndex !== null && !isCreatingBlock) ? blocks[selectedIndex]?.id : undefined,
+          blockType: (selectedIndex !== null && !isCreatingBlock) ? blocks[selectedIndex]?.blockType : undefined,
+          blockData: (selectedIndex !== null && !isCreatingBlock) ? blocks[selectedIndex]?.blockData : undefined,
           pageContext: {
             title: document.title,
             totalBlocks: blocks.length,
@@ -125,7 +130,206 @@ export const useIndyChat = (): UseIndyChatReturn => {
           useSuperIntelligence: config.useSuperIntelligence
         };
 
-        // Call API
+        // Check if we should use streaming (for create operations)
+        const useStreaming = isCreatingBlock;
+        
+        console.log('🔍 Streaming check:', {
+          useStreaming,
+          selectedIndex,
+          willUseStreaming: useStreaming && !selectedIndex,
+          userMessage
+        });
+        
+        if (useStreaming && !selectedIndex) {
+          // Use streaming endpoint for block creation
+          console.log('🌊 Using streaming endpoint');
+          
+          // Add initial AI message with loading state
+          const aiMessageId = (Date.now() + 1).toString();
+          const aiMsg: ChatMessage = {
+            id: aiMessageId,
+            role: 'assistant',
+            type: 'assistant',
+            content: 'Thinking...',
+            timestamp: new Date(),
+            metadata: {
+              status: 'thinking',
+              icon: 'special.magic'
+            }
+          };
+          addMessage(aiMsg);
+          
+          const response = await fetch('/api/indy/generate/stream', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userInput: userMessage,
+              blockType: requestBody.blockType,
+              currentData: requestBody.blockData
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`API request failed: ${response.status}`);
+          }
+
+          const reader = response.body?.getReader();
+          const decoder = new TextDecoder();
+          let streamedContent = '';
+          let finalResult: any = null;
+
+          if (reader) {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const chunk = decoder.decode(value);
+              const lines = chunk.split('\n');
+
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  try {
+                    const data = JSON.parse(line.slice(6));
+                    
+                    // Update message based on streaming event
+                    const updatedMsg = { ...aiMsg };
+                    
+                    switch (data.type) {
+                      case 'connected':
+                        updatedMsg.content = 'Connected to AI...';
+                        updatedMsg.metadata = { status: 'connected', icon: 'technology.signal' };
+                        break;
+                        
+                      case 'classification':
+                        updatedMsg.content = `Using ${data.agent} (${Math.round(data.confidence * 100)}% confidence)`;
+                        updatedMsg.metadata = { 
+                          status: 'classified', 
+                          icon: 'status.verified',
+                          agent: data.agent,
+                          confidence: data.confidence
+                        };
+                        break;
+                        
+                      case 'status':
+                        updatedMsg.content = data.message;
+                        updatedMsg.metadata = { status: 'processing', icon: 'actions.refresh' };
+                        break;
+                        
+                      case 'blockSelected':
+                        updatedMsg.content = `Creating ${data.blockType} block...`;
+                        updatedMsg.metadata = { 
+                          status: 'generating', 
+                          icon: 'layout.stack',
+                          blockType: data.blockType
+                        };
+                        break;
+                        
+                      case 'chunk':
+                        streamedContent += data.content;
+                        const preview = streamedContent.length > 100 
+                          ? '...' + streamedContent.slice(-100) 
+                          : streamedContent;
+                        updatedMsg.content = `Generating content...\n\`\`\`json\n${preview}\n\`\`\``;
+                        updatedMsg.metadata = { status: 'streaming', icon: 'special.lightning' };
+                        break;
+                        
+                      case 'complete':
+                        // The streaming endpoint already sends the complete action
+                        if (data.action) {
+                          finalResult = {
+                            success: true,
+                            action: data.action,
+                            message: data.action.message || `✅ Created a ${data.action.blockType} block successfully!`,
+                            timing: data.timing,
+                            agentUsed: 'createAgent'
+                          };
+                        } else {
+                          // Fallback for old format
+                          finalResult = {
+                            success: true,
+                            action: {
+                              type: 'ADD_BLOCK',
+                              blockType: data.blockType,
+                              data: data.blockData
+                            },
+                            message: `✅ Created a ${data.blockType} block successfully!`,
+                            timing: data.timing,
+                            agentUsed: 'createAgent'
+                          };
+                        }
+                        
+                        updatedMsg.content = `✨ Created a ${data.blockType} block successfully!`;
+                        updatedMsg.metadata = { 
+                          status: 'complete', 
+                          icon: 'status.complete',
+                          timing: data.timing
+                        };
+                        break;
+                        
+                      case 'error':
+                        updatedMsg.content = `❌ Error: ${data.error}`;
+                        updatedMsg.metadata = { status: 'error', icon: 'system.error' };
+                        throw new Error(data.error);
+                    }
+                    
+                    // Update the message in the store
+                    const { updateMessage } = useIndyChatStore.getState();
+                    if (updateMessage) {
+                      updateMessage(aiMessageId, updatedMsg);
+                    } else {
+                      // Fallback if updateMessage is not available
+                      const { messages, setMessages } = useIndyChatStore.getState();
+                      const updatedMessages = messages.map(msg => 
+                        msg.id === aiMessageId ? updatedMsg : msg
+                      );
+                      setMessages(updatedMessages);
+                    }
+                    
+                  } catch (e) {
+                    console.error('Failed to parse SSE data:', e);
+                  }
+                }
+              }
+            }
+          }
+          
+          // Use the final result from streaming
+          if (finalResult) {
+            const result = finalResult;
+            console.log('📥 Streaming completed with result:', result);
+            
+            // Process response
+            const { reply, metadata } = processApiResponse(result);
+            
+            // Handle block updates
+            handleBlockUpdates(result);
+            
+            // Update the final message
+            const { updateMessage } = useIndyChatStore.getState();
+            const finalMsg = {
+              ...aiMsg,
+              content: reply,
+              metadata: { ...metadata, ...aiMsg.metadata }
+            };
+            if (updateMessage) {
+              updateMessage(aiMessageId, finalMsg);
+            } else {
+              // Fallback
+              const { messages, setMessages } = useIndyChatStore.getState();
+              const updatedMessages = messages.map(msg => 
+                msg.id === aiMessageId ? finalMsg : msg
+              );
+              setMessages(updatedMessages);
+            }
+          }
+          
+          setIsLoading(false);
+          return;
+        }
+        
+        // Non-streaming API call (for updates, etc.)
         console.log('📤 Sending request to API:', requestBody);
         const response = await fetch('/api/indy/action', {
           method: 'POST',
@@ -353,22 +557,25 @@ function handleBlockUpdates(result: any): void {
         });
       }
     } else if (result.action.type === 'ADD_BLOCK') {
+      // Use blockData property (from streaming) or data property (from non-streaming)
+      const actionData = result.action.blockData || result.action.data;
+      
       console.log('🎨 Adding new block via chat:', {
         blockType: result.action.blockType,
-        hasData: !!result.action.data,
-        dataKeys: result.action.data ? Object.keys(result.action.data) : [],
-        fullData: result.action.data,
-        dataStructure: JSON.stringify(result.action.data, null, 2)
+        hasData: !!actionData,
+        dataKeys: actionData ? Object.keys(actionData) : [],
+        fullData: actionData,
+        dataStructure: JSON.stringify(actionData, null, 2)
       });
       
       // Check if the data contains an error
-      if (result.action.data?.success === false) {
-        console.error('❌ Block creation failed:', result.action.data.error);
+      if (actionData?.success === false) {
+        console.error('❌ Block creation failed:', actionData.error);
         return; // Don't add the block if there was an error
       }
       
       const { addBlock } = useBlocksStore.getState();
-      const blockData = result.action.data || createDefaultBlockData(result.action.blockType);
+      const blockData = actionData || createDefaultBlockData(result.action.blockType);
       console.log('📦 Final block data being added:', {
         blockType: result.action.blockType,
         hasCards: !!(blockData.cards),

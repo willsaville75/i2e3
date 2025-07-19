@@ -14,6 +14,14 @@ export interface ChatMessage {
     action?: any;
     confidence?: number;
     agentUsed?: string;
+    agent?: string;
+    status?: 'thinking' | 'connected' | 'classified' | 'processing' | 'generating' | 'streaming' | 'complete' | 'error';
+    icon?: string;
+    blockType?: string;
+    blockId?: string;
+    timing?: {
+      totalMs: number;
+    };
     classification?: {
       primaryIntent: string;
       reasoning: string;
@@ -65,6 +73,7 @@ interface IndyChatState {
   
   // Actions
   addMessage: (message: ChatMessage) => void;
+  updateMessage: (id: string, updates: Partial<ChatMessage>) => void;
   setMessages: (messages: ChatMessage[]) => void;
   setInput: (value: string) => void;
   setSelectedAgent: (agent: AgentType) => void;
@@ -109,6 +118,13 @@ export const useIndyChatStore = create<IndyChatState>()(
       addMessage: (message: ChatMessage) =>
         set((state) => ({
           messages: [...state.messages, message]
+        })),
+        
+      updateMessage: (id: string, updates: Partial<ChatMessage>) =>
+        set((state) => ({
+          messages: state.messages.map(msg => 
+            msg.id === id ? { ...msg, ...updates } : msg
+          )
         })),
         
       setMessages: (messages: ChatMessage[]) =>

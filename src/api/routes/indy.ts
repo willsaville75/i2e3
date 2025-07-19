@@ -95,7 +95,7 @@ router.post('/generate', async (req: Request, res: Response) => {
       blockData = result;
     }
     
-    const responseData = {
+    const responseData: any = {
       success: result.success !== false,
       blockData,
       agentUsed: agentName,
@@ -105,6 +105,27 @@ router.post('/generate', async (req: Request, res: Response) => {
         totalMs: Date.now() - startTime
       }
     };
+    
+    // If this is a block creation from blockOperations, wrap it in an action
+    if (agentName === 'createAgent' && result.blockData) {
+      // Determine block type from the result or data structure
+      let blockType = result.selectedBlockType;
+      if (!blockType && blockData) {
+        // Try to infer block type from the data structure
+        if (blockData.cards) {
+          blockType = 'grid';
+        } else if (blockData.elements?.button) {
+          blockType = 'hero';
+        }
+      }
+      
+      responseData.action = {
+        type: 'ADD_BLOCK',
+        blockType: blockType || 'hero', // Default to hero if can't determine
+        data: blockData
+      };
+      responseData.message = `✅ Successfully created a ${blockType || 'hero'} block!`;
+    }
     
     console.log(`📤 Sending response (${Date.now() - startTime}ms)`);
     console.log(`📏 Response size: ${JSON.stringify(responseData).length} chars`);
@@ -122,12 +143,233 @@ router.post('/generate', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/indy/generate/stream
+ * Stream AI responses in real-time using Server-Sent Events
+ */
+router.post('/generate/stream', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  try {
+    const { userInput, blockType, currentData } = req.body;
+    
+    // Validate required fields
+    if (!userInput) {
+      return res.status(400).json({
+        error: 'userInput is required'
+      });
+    }
+    
+    // Set up SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    
+    // Send initial connection event
+    res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`);
+    
+    // Use hybrid classification
+    const classification = await classifyIntent(userInput, { currentData, blockType });
+    const agentName = classification.agent;
+    
+    // Send classification event
+    res.write(`data: ${JSON.stringify({ 
+      type: 'classification',
+      agent: agentName,
+      confidence: classification.confidence
+    })}\n\n`);
+    
+    // For now, only support streaming for create operations
+    if (agentName === 'createAgent') {
+      // Import streaming functions
+      const { callAIStream } = await import('../../ai/call');
+      const { buildOpenAIPromptForBlock } = await import('../../indy/utils/buildOpenAIPromptForBlock');
+      const { blockRegistry } = await import('../../blocks');
+      const { getFastModel } = await import('../../ai/client');
+      
+      let selectedBlockType = blockType;
+      
+      // Step 1: Block selection if needed
+      if (!selectedBlockType) {
+        res.write(`data: ${JSON.stringify({ 
+          type: 'status',
+          message: 'Selecting appropriate block type...'
+        })}\n\n`);
+        
+        const selectionPrompt = buildOpenAIPromptForBlock({
+          blockType: undefined,
+          context: { intent: userInput },
+          mode: 'create',
+          instructions: userInput
+        });
+        
+        // Use non-streaming for selection (it's quick)
+        const { callAI } = await import('../../ai/call');
+        const selection = await callAI({
+          prompt: selectionPrompt,
+          model: getFastModel(),
+          maxTokens: 500,
+          temperature: 0.3
+        });
+        
+        // Parse the AI response to extract selectedBlockType
+        try {
+          // Clean up the response - remove markdown code blocks if present
+          let cleanedSelection = selection.trim();
+          if (cleanedSelection.startsWith('```')) {
+            cleanedSelection = cleanedSelection.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+          }
+          
+          const parsed = JSON.parse(cleanedSelection);
+          selectedBlockType = parsed.selectedBlockType || parsed.selectedblocktype;
+          
+          // If AI already generated content, we can skip step 2
+          const blockContent = parsed.blockContent || parsed.blockcontent;
+          if (blockContent) {
+            res.write(`data: ${JSON.stringify({ 
+              type: 'blockSelected',
+              blockType: selectedBlockType
+            })}\n\n`);
+            
+            res.write(`data: ${JSON.stringify({
+              type: 'complete',
+              action: {
+                type: 'ADD_BLOCK',
+                blockType: selectedBlockType,
+                blockData: blockContent,
+                message: `✅ Successfully created a ${selectedBlockType} block! The content has been added to your page.`
+              }
+            })}\n\n`);
+            
+            res.end();
+            return;
+          }
+        } catch (e) {
+          console.error('Failed to parse AI selection response:', e);
+          // Try to extract block type from the response
+          const blockTypeMatch = selection.match(/selectedBlockType["\s:]*["']?(\w+)["']?/i);
+          if (blockTypeMatch) {
+            selectedBlockType = blockTypeMatch[1].toLowerCase();
+          } else {
+            selectedBlockType = 'hero'; // Default fallback
+          }
+        }
+        
+        res.write(`data: ${JSON.stringify({ 
+          type: 'blockSelected',
+          blockType: selectedBlockType
+        })}\n\n`);
+      }
+      
+      // Step 2: Stream content generation
+      res.write(`data: ${JSON.stringify({ 
+        type: 'status',
+        message: `Generating ${selectedBlockType} block content...`
+      })}\n\n`);
+      
+      console.log('🔍 Looking up block config:', {
+        selectedBlockType,
+        registryKeys: Object.keys(blockRegistry),
+        hasConfig: !!blockRegistry[selectedBlockType]
+      });
+      
+      const blockConfig = blockRegistry[selectedBlockType];
+      if (!blockConfig) {
+        console.error(`Block type "${selectedBlockType}" not found in registry`);
+        res.write(`data: ${JSON.stringify({
+          type: 'error',
+          message: `Unknown block type: ${selectedBlockType}`
+        })}\n\n`);
+        res.end();
+        return;
+      }
+      
+      const context = {
+        blockType: selectedBlockType,
+        intent: userInput,
+        schema: blockConfig.schema,
+        aiHints: blockConfig.aiHints,
+        defaults: blockConfig.defaultData
+      };
+      
+      const contentPrompt = buildOpenAIPromptForBlock({
+        blockType: selectedBlockType,
+        context,
+        mode: 'create',
+        instructions: userInput
+      });
+      
+      let streamedContent = '';
+      
+      // Stream the response
+      await callAIStream(
+        {
+          prompt: contentPrompt,
+          model: getFastModel(),
+          maxTokens: selectedBlockType === 'grid' ? 2000 : 1000,
+          temperature: 0.7
+        },
+        (chunk) => {
+          streamedContent += chunk;
+          // Send each chunk as it arrives
+          res.write(`data: ${JSON.stringify({ 
+            type: 'chunk',
+            content: chunk
+          })}\n\n`);
+        }
+      );
+      
+      // Parse the complete response
+      try {
+        const cleaned = streamedContent
+          .replace(/```json\n?/g, '')
+          .replace(/```\n?/g, '')
+          .trim();
+        const blockData = JSON.parse(cleaned);
+        
+        // Send the final parsed block data
+        res.write(`data: ${JSON.stringify({ 
+          type: 'complete',
+          action: {
+            type: 'ADD_BLOCK',
+            blockType: selectedBlockType,
+            blockData: blockData,
+            message: `✅ Successfully created a ${selectedBlockType} block! The content has been added to your page.`
+          },
+          timing: { totalMs: Date.now() - startTime }
+        })}\n\n`);
+      } catch (parseError) {
+        res.write(`data: ${JSON.stringify({ 
+          type: 'error',
+          error: 'Failed to parse AI response'
+        })}\n\n`);
+      }
+    } else {
+      // For non-create operations, fall back to regular generation
+      res.write(`data: ${JSON.stringify({ 
+        type: 'error',
+        error: 'Streaming not yet supported for this operation'
+      })}\n\n`);
+    }
+    
+    res.end();
+    
+  } catch (error) {
+    console.error('Streaming error:', error);
+    res.write(`data: ${JSON.stringify({ 
+      type: 'error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })}\n\n`);
+    res.end();
+  }
+});
+
+/**
  * POST /api/indy/action
  * Execute an Indy action using efficient AI-first approach
  */
 router.post('/action', async (req: Request, res: Response) => {
   try {
-    const { userInput, blockId, blockType: providedBlockType, blockData, currentData, pageContext, tokens } = req.body;
+    const { userInput, blockId, blockType: providedBlockType, blockData, currentData, pageContext } = req.body;
     
     console.log('🌐 API /action endpoint called:', {
       userInput,
@@ -163,20 +405,8 @@ router.post('/action', async (req: Request, res: Response) => {
       userInput.toLowerCase().includes(keyword)
     ) && !blockId;
     
-    // Determine blockType - could be from request or extracted from intent
+    // Let AI determine blockType - single source of truth
     let blockType = providedBlockType;
-    
-    if (!blockType && isCreatingBlock) {
-      // Try to extract block type from user input
-      const blockTypes = ['hero', 'grid', 'feature', 'testimonial', 'cta'];
-      for (const type of blockTypes) {
-        if (userInput.toLowerCase().includes(type)) {
-          blockType = type;
-          console.log(`📦 Extracted blockType '${type}' from user input`);
-          break;
-        }
-      }
-    }
     
     if (agentName === 'runIndyContextAgent') {
       // Context agent needs exact blockType (or undefined) to handle no selection
@@ -274,11 +504,21 @@ router.post('/action', async (req: Request, res: Response) => {
         // Check if AI selected a block type (from blockOperations)
         const selectedBlockType = result.selectedBlockType || blockType || agentInput.blockType;
         
+        // If creating a block but no type was determined, try to infer from the data
+        let finalBlockType = selectedBlockType;
+        if (!finalBlockType && result.blockData) {
+          // Try to infer block type from the data structure
+          if (result.blockData.cards) {
+            finalBlockType = 'grid';
+          } else if (result.blockData.elements?.button) {
+            finalBlockType = 'hero';
+          }
+        }
+        
         // Generate a user-friendly message based on the action
         const actionType = blockId ? 'UPDATE_BLOCK' : 'ADD_BLOCK';
         const actionVerb = blockId ? 'updated' : 'created';
-        const finalBlockType = selectedBlockType || 'block';
-        const blockTypeDisplay = finalBlockType ? `${finalBlockType} block` : 'block';
+        const blockTypeDisplay = finalBlockType ? `${finalBlockType} block` : 'content';
         
         let message = `✅ Successfully ${actionVerb} your ${blockTypeDisplay}!`;
         
@@ -292,6 +532,15 @@ router.post('/action', async (req: Request, res: Response) => {
           return res.status(400).json({
             success: false,
             error: result.error || 'Failed to generate block content',
+            agentUsed: agentName
+          });
+        }
+        
+        // Don't allow creating blocks without a valid type
+        if (actionType === 'ADD_BLOCK' && !finalBlockType) {
+          return res.status(400).json({
+            success: false,
+            error: 'Could not determine block type. Please specify the type of block you want to create (e.g., "create a hero block" or "add a grid with cards").',
             agentUsed: agentName
           });
         }

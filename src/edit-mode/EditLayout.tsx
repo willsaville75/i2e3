@@ -47,7 +47,7 @@ export default function EditLayout() {
                 duration: 0.3, 
                 ease: 'easeInOut'
               }}
-              className="w-[21rem] h-full border-r border-gray-200 bg-white shadow-md"
+              className="w-[21rem] h-full border-r border-gray-200 bg-white shadow-md relative z-40"
             >
               <PropertiesPanel />
             </motion.div>

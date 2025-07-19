@@ -1,20 +1,20 @@
 // AI hints for grid block generation
 export const gridAIHints = {
   contentPatterns: [
-    'For team grids, use profile cards with name in title.content, role in subtitle.content, and bio in description.content',
-    'Only include elements that have actual content - do not include empty objects',
-    'For primaryAction, include both text and href properties',
-    'For avatar images, use src and alt properties (NOT url)'
+    'For team grids, map: name→title.content, role→subtitle.content, bio→description.content',
+    'NEVER use simplified structures like {name, position, image, bio}',
+    'ALWAYS use the nested structure: {id, elements: {title: {content}, subtitle: {content}, ...}}',
+    'For avatar images, use src and alt properties (NOT url or image)'
   ],
   structureGuidelines: [
     'Default to 3 columns on desktop, 2 on tablet, 1 on mobile',
-    'Use consistent card types within a grid',
+    'Each card MUST have: id, elements (object), layout (object)',
     'ALWAYS include all top-level properties: elements, layout, cards, background'
   ],
   propertyNotes: {
-    cards: 'Array of card objects. Each element should have content, not empty objects.',
-    important: 'Do NOT include empty objects like "icon": {} or "avatar": {}. Only include elements with actual values.',
-    avatar: 'Use { src: "image-url", alt: "description" } NOT { url: "..." }',
+    cards: 'Array of card objects with EXACT structure: {id, elements, layout, background, appearance}',
+    important: 'Do NOT use simplified structures. Each card needs nested objects.',
+    critical: 'NEVER use {name, position, image} - ALWAYS use {elements: {title: {content}, subtitle: {content}}}',
     structure: 'Response must have: elements (with sectionTitle), layout (with grid settings), cards (array), background'
   },
   minimalExample: `{

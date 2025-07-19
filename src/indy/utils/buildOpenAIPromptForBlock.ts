@@ -43,8 +43,94 @@ Analyze the user's intent and:
 Return a JSON response in this format:
 {
   "selectedBlockType": "[chosen block type]",
-  "blockContent": { ... generated content matching the block's schema ... }
+  "blockContent": { 
+    ... generated content matching the block's schema ...
+  }
 }
+
+IMPORTANT: The blockContent must match the exact schema structure for the selected block type.
+For hero blocks, use this structure:
+{
+  "selectedBlockType": "hero",
+  "blockContent": {
+    "elements": {
+      "title": { "content": "...", "level": 1 },
+      "subtitle": { "content": "..." },
+      "button": { "text": "...", "href": "/...", "variant": "primary", "size": "lg" }
+    },
+    "layout": {
+      "blockSettings": { "blockWidth": false, "height": "auto", "margin": { "top": "lg", "bottom": "lg" } },
+      "contentSettings": {
+        "contentAlignment": { "horizontal": "center", "vertical": "center" },
+        "textAlignment": "center",
+        "contentWidth": "wide",
+        "padding": { "top": "lg", "bottom": "lg", "left": "md", "right": "md" }
+      }
+    },
+    "background": {
+      "type": "gradient|color|image|video",
+      "color": "blue",
+      "colorIntensity": "medium",
+      "gradient": "sunset|ocean|purple|forest|fire|sky|rose|mint",
+      "image": { "url": "...", "mobileUrl": "...", "position": "center", "size": "cover" },
+      "video": { "url": "...", "poster": "..." },
+      "overlay": { "enabled": false, "color": "#000000", "opacity": 0.5, "blur": false }
+    }
+  }
+}
+
+For grid blocks, use this EXACT structure:
+{
+  "selectedBlockType": "grid",
+  "blockContent": {
+    "elements": {
+      "sectionTitle": { "content": "...", "level": 2 },
+      "sectionSubtitle": { "content": "..." }
+    },
+    "layout": {
+      "blockSettings": { "blockWidth": false, "height": "auto", "margin": { "top": "lg", "bottom": "lg" } },
+      "contentSettings": {
+        "textAlignment": "center",
+        "contentWidth": "wide",
+        "padding": { "top": "lg", "bottom": "lg", "left": "md", "right": "md" }
+      },
+      "grid": {
+        "columns": { "desktop": 3, "tablet": 2, "mobile": 1 },
+        "gap": "lg",
+        "alignItems": "stretch"
+      }
+    },
+    "cards": [
+      {
+        "id": "card-1",
+        "elements": {
+          "title": { "content": "..." },
+          "subtitle": { "content": "..." },
+          "description": { "content": "..." },
+          "avatar": { "src": "...", "alt": "..." }
+        },
+        "layout": {
+          "cardType": "profile",
+          "padding": "md",
+          "alignment": "center"
+        }
+      }
+    ],
+    "background": {
+      "type": "color",
+      "color": "white",
+      "colorIntensity": "light"
+    }
+  }
+}
+
+CRITICAL: Each card MUST have nested structure with "elements" object containing title, subtitle, etc.
+NEVER use flat structure like {title: "...", subtitle: "..."} - ALWAYS use {elements: {title: {content: "..."}}}
+Each card needs: id, elements (object), layout (object), and optionally background/appearance.
+
+BACKGROUND GUIDANCE:
+- If user mentions "mint", "sunset", "ocean", etc., use type: "gradient" with the corresponding gradient preset
+- For solid colors (blue, red, green, etc.), use type: "color"
 
 Select the block type that best matches the user's intent and generate appropriate content.`;
   }
@@ -108,6 +194,17 @@ Return ONLY valid JSON with your updates.`;
 
     if (hints.contentGuidelines) {
       aiHintsSection += `\nContent Guidelines: ${JSON.stringify(hints.contentGuidelines)}`;
+    }
+    
+    if (hints.backgroundGuidance) {
+      aiHintsSection += `\n\nBACKGROUND GUIDANCE:`;
+      if (hints.backgroundGuidance.colorVsGradient) {
+        aiHintsSection += `\n- Use gradient when: ${hints.backgroundGuidance.colorVsGradient.useGradient.join(', ')}`;
+        aiHintsSection += `\n- Use color when: ${hints.backgroundGuidance.colorVsGradient.useColor.join(', ')}`;
+      }
+      if (hints.backgroundGuidance.importantNote) {
+        aiHintsSection += `\n- IMPORTANT: ${hints.backgroundGuidance.importantNote}`;
+      }
     }
   }
 

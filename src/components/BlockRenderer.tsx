@@ -128,9 +128,5 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
   }
 };
 
-/**
- * Memoized version of BlockRenderer for performance
- */
-export const MemoizedBlockRenderer = React.memo(BlockRenderer);
-
-export default BlockRenderer; 
+// Remove the MemoizedBlockRenderer and default export
+// Only export the named BlockRenderer component 

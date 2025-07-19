@@ -29,6 +29,4 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({
   };
 
   return <Component {...mergedProps} />;
-};
-
-export default ElementRenderer; 
+}; 

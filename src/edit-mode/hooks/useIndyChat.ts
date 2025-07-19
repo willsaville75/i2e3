@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useBlocksStore } from '../../store/blocksStore';
 import { useIndyChatStore, ChatMessage } from '../../store/indyChatStore';
 import { createDefaultBlockData } from '../../ai/indyFunctions';
@@ -33,7 +33,6 @@ export const useIndyChat = (): UseIndyChatReturn => {
     schemaNavigation, 
     updateSchemaPath,
     addMessage,
-    setMessages,
     setIsLoading,
     updateConfig: updateStoreConfig,
     clearMessages

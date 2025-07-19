@@ -168,6 +168,27 @@ export const gridSchema = createBlockSchema({
           default: 'card-1'
         }),
         elements: schemaProperties.object({
+          icon: schemaProperties.object({
+            name: schemaProperties.string({
+              title: 'Icon Name',
+              default: 'UserIcon'
+            }),
+            size: schemaProperties.string({
+              title: 'Icon Size',
+              enum: ['sm', 'md', 'lg', 'xl'],
+              default: 'md'
+            })
+          }),
+          avatar: schemaProperties.object({
+            src: schemaProperties.string({
+              title: 'Avatar Image URL',
+              default: 'https://via.placeholder.com/150'
+            }),
+            alt: schemaProperties.string({
+              title: 'Avatar Alt Text',
+              default: 'Team member'
+            })
+          }),
           title: schemaProperties.object({
             content: schemaProperties.string({
               title: 'Title',
@@ -190,6 +211,95 @@ export const gridSchema = createBlockSchema({
               title: 'Description',
               default: 'Card description text'
             })
+          }),
+          image: schemaProperties.object({
+            src: schemaProperties.string({
+              title: 'Image URL',
+              default: 'https://via.placeholder.com/300x200'
+            }),
+            alt: schemaProperties.string({
+              title: 'Image Alt Text',
+              default: 'Card image'
+            })
+          }),
+          primaryAction: schemaProperties.object({
+            text: schemaProperties.string({
+              title: 'Button Text',
+              default: 'Learn More'
+            }),
+            href: schemaProperties.string({
+              title: 'Button Link',
+              default: '#'
+            }),
+            variant: schemaProperties.string({
+              title: 'Button Variant',
+              enum: ['primary', 'secondary', 'outline'],
+              default: 'primary'
+            }),
+            size: schemaProperties.string({
+              title: 'Button Size',
+              enum: ['sm', 'md', 'lg'],
+              default: 'md'
+            })
+          }),
+          secondaryAction: schemaProperties.object({
+            text: schemaProperties.string({
+              title: 'Button Text',
+              default: 'Cancel'
+            }),
+            href: schemaProperties.string({
+              title: 'Button Link',
+              default: '#'
+            }),
+            variant: schemaProperties.string({
+              title: 'Button Variant',
+              enum: ['primary', 'secondary', 'outline'],
+              default: 'outline'
+            }),
+            size: schemaProperties.string({
+              title: 'Button Size',
+              enum: ['sm', 'md', 'lg'],
+              default: 'md'
+            })
+          })
+        }),
+        layout: schemaProperties.object({
+          cardType: schemaProperties.string({
+            title: 'Card Type',
+            enum: ['profile', 'stat', 'content', 'icon', 'custom'],
+            default: 'custom'
+          }),
+          padding: schemaProperties.string({
+            title: 'Padding',
+            enum: ['none', 'sm', 'md', 'lg', 'xl'],
+            default: 'md'
+          }),
+          alignment: schemaProperties.string({
+            title: 'Alignment',
+            enum: ['left', 'center', 'right'],
+            default: 'left'
+          })
+        }),
+        background: schemaProperties.background(),
+        appearance: schemaProperties.object({
+          shadow: schemaProperties.string({
+            title: 'Shadow',
+            enum: ['none', 'sm', 'md', 'lg', 'xl'],
+            default: 'md'
+          }),
+          borderRadius: schemaProperties.string({
+            title: 'Border Radius',
+            enum: ['none', 'sm', 'md', 'lg', 'xl', 'full'],
+            default: 'lg'
+          }),
+          borderWidth: schemaProperties.string({
+            title: 'Border Width',
+            enum: ['none', 'thin', 'medium', 'thick'],
+            default: 'none'
+          }),
+          borderColor: schemaProperties.string({
+            title: 'Border Color',
+            default: 'gray-300'
           })
         })
       }),

@@ -127,7 +127,19 @@ router.post('/generate', async (req: Request, res: Response) => {
  */
 router.post('/action', async (req: Request, res: Response) => {
   try {
-    const { userInput, blockId, blockType, blockData } = req.body;
+    const { userInput, blockId, blockType: providedBlockType, blockData, currentData, pageContext, tokens } = req.body;
+    
+    console.log('🌐 API /action endpoint called:', {
+      userInput,
+      blockId,
+      providedBlockType,
+      hasBlockData: !!blockData,
+      hasCurrentData: !!currentData,
+      hasPageContext: !!pageContext
+    });
+    
+    // Use blockData if provided, otherwise use currentData for backwards compatibility
+    const currentBlockData = blockData || currentData;
     
     if (!userInput) {
       return res.status(400).json({ 
@@ -140,16 +152,56 @@ router.post('/action', async (req: Request, res: Response) => {
     console.log('🤖 API: Using AI-first orchestrator approach');
     
     const agentName = await classifyIntentToAgent(userInput);
+    console.log(`🤖 Agent selected: ${agentName}`);
     
-    // Prepare agent input based on agent type
-    let agentInput;
+    // Prepare agent input based on the selected agent
+    let agentInput: any = {};
+    
+    // First check if user is trying to add a block without specifying type
+    const blockCreationKeywords = ['add', 'create', 'insert', 'new'];
+    const isCreatingBlock = blockCreationKeywords.some(keyword => 
+      userInput.toLowerCase().includes(keyword)
+    ) && !blockId;
+    
+    // Determine blockType - could be from request or extracted from intent
+    let blockType = providedBlockType;
+    
+    if (!blockType && isCreatingBlock) {
+      // Try to extract block type from user input
+      const blockTypes = ['hero', 'grid', 'feature', 'testimonial', 'cta'];
+      for (const type of blockTypes) {
+        if (userInput.toLowerCase().includes(type)) {
+          blockType = type;
+          console.log(`📦 Extracted blockType '${type}' from user input`);
+          break;
+        }
+      }
+    }
+    
     if (agentName === 'runIndyContextAgent') {
       // Context agent needs exact blockType (or undefined) to handle no selection
       agentInput = {
-        blockType,
-        props: blockData,
-        schema: null,
-        aiHints: null
+        blockType: blockType,
+        currentData: currentBlockData,
+        intent: userInput
+      };
+    } else if (agentName === 'runIndyPageAgent') {
+      agentInput = {
+        context: {
+          blocks: [{ blockType, current: currentBlockData }]
+        },
+        model: 'gpt-4o-mini',
+        goal: userInput
+      };
+    } else if (agentName === 'runIndyExecutionAgent') {
+      agentInput = {
+        command: userInput,
+        context: { blockType, currentData: currentBlockData }
+      };
+    } else if (agentName === 'runIndyPromptAgent') {
+      agentInput = {
+        query: userInput,
+        context: { blockType, currentData: currentBlockData }
       };
     } else if (agentName === 'runIndyConversationAgent') {
       // Conversation agent just needs the user input
@@ -163,7 +215,7 @@ router.post('/action', async (req: Request, res: Response) => {
       
       agentInput = {
         blockType: undefined, // Explicitly undefined to trigger block selection
-        currentData: blockData,
+        currentData: currentBlockData,
         intent: userInput,
         blockId
       };
@@ -171,11 +223,18 @@ router.post('/action', async (req: Request, res: Response) => {
       // Other agents - only set blockType if one is provided
       agentInput = {
         blockType: blockType,
-        currentData: blockData,
+        currentData: currentBlockData,
         intent: userInput,
         blockId
       };
     }
+    
+    console.log('📤 Calling agent with input:', {
+      agent: agentName,
+      blockType: agentInput.blockType,
+      hasCurrentData: !!agentInput.currentData,
+      intent: agentInput.intent
+    });
     
     const result = await runAgent(agentName, agentInput);
     

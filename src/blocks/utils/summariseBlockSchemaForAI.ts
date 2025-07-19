@@ -35,6 +35,16 @@ function processSchemaProperties(
     const fieldInfo = value as any;
 
     if (fieldInfo.type === 'object' && fieldInfo.properties) {
+      // Always add the object field to show it exists
+      let objectDescription = `- ${currentPath}: object`;
+      if (fieldInfo.title) {
+        objectDescription += ` (${fieldInfo.title})`;
+      }
+      if (fieldInfo.description) {
+        objectDescription += ` - ${fieldInfo.description}`;
+      }
+      fields.push(objectDescription);
+      
       // Recursively process nested objects
       const nestedFields = processSchemaProperties(
         fieldInfo.properties,
@@ -61,16 +71,17 @@ function processSchemaProperties(
       fields.push(arrayDescription);
       
       // If array has object items with properties, show the structure
-      if (fieldInfo.items?.properties) {
-        fields.push(`  Structure of each ${key} item:`);
-        const arrayFields = processSchemaProperties(
+      if (fieldInfo.items?.type === 'object' && fieldInfo.items.properties) {
+        fields.push(`  Each ${key} item has:`);
+        const itemFields = processSchemaProperties(
           fieldInfo.items.properties,
-          `  `,
+          `${currentPath}[]`,  // Use proper path notation for array items
           depth + 1,
           maxDepth,
           options
         );
-        fields.push(...arrayFields.map(field => `  ${field}`));
+        // Don't add extra indentation, the path already includes it
+        fields.push(...itemFields.map(field => `  ${field}`));
       } else if (fieldInfo.items?.type) {
         fields.push(`  - Each item is: ${fieldInfo.items.type}`);
       }
@@ -238,6 +249,7 @@ export function summariseBlockSchemaForAI(
 
   // Process properties
   if (schema.properties) {
+    
     const fields = processSchemaProperties(schema.properties, '', 0, maxDepth, { includeDefaults, includeEnums });
     
     if (fields.length > 0) {
@@ -262,8 +274,9 @@ export function summariseBlockSchemaForAI(
   // Add example structure
   lines.push('');
   lines.push('**Expected JSON Structure:**');
-  lines.push(generateExampleStructure(schema.properties));
-
+  const exampleStructure = generateExampleStructure(schema.properties);
+  lines.push(exampleStructure);
+  
   return lines.join('\n');
 }
 

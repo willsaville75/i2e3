@@ -8,15 +8,26 @@ export type { ClassificationResult } from '../utils/hybridClassification';
  * Execute an agent by name with input
  */
 export async function runAgent(agentName: string, input: any): Promise<any> {
+  console.log(`🎯 runAgent called:`, {
+    agentName,
+    inputKeys: Object.keys(input),
+    blockType: input.blockType,
+    operation: input.operation
+  });
+  
   try {
     const agent = agentMap[agentName as keyof typeof agentMap];
     if (!agent) {
+      console.error(`❌ Agent '${agentName}' not found in agentMap`);
       throw new Error(`Agent '${agentName}' not found`);
     }
 
+    console.log(`🚀 Executing agent: ${agentName}`);
     const result = await agent(input);
+    console.log(`✅ Agent ${agentName} completed successfully`);
     return result;
   } catch (error) {
+    console.error(`❌ Agent ${agentName} failed:`, error);
     throw error;
   }
 }

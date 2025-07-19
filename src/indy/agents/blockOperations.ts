@@ -134,8 +134,16 @@ export default async function run(input: BlockOperationInput): Promise<BlockOper
         hasSchema: !!blockEntry.schema,
         hasAIHints: !!blockEntry.aiHints,
         hasDefaults: !!blockEntry.defaultData,
-        aiHintKeys: blockEntry.aiHints ? Object.keys(blockEntry.aiHints) : []
+        aiHintKeys: blockEntry.aiHints ? Object.keys(blockEntry.aiHints) : [],
+        schemaType: typeof blockEntry.schema,
+        schemaKeys: blockEntry.schema ? Object.keys(blockEntry.schema) : [],
+        hasToJSON: blockEntry.schema && typeof blockEntry.schema.toJSON === 'function'
       });
+      
+      // Log the actual schema structure
+      if (blockEntry.schema) {
+        console.log('🔍 Schema structure:', JSON.stringify(blockEntry.schema, null, 2).substring(0, 500) + '...');
+      }
       
       // Create context with schema
       const context = {
@@ -171,19 +179,19 @@ export default async function run(input: BlockOperationInput): Promise<BlockOper
     }
     
     // Call AI with the prompt
-    const response = await callAI({
+    const aiResponse = await callAI({
       prompt,
       model: getFastModel(),
-      maxTokens: 800,
+      maxTokens: blockType === 'grid' ? 2000 : 800,  // Grid blocks need more tokens for multiple cards
       temperature: 0.2
     });
     
-    console.log('🤖 AI Raw Response for', operation, ':', response);
+    console.log('🤖 AI Raw Response for', operation, ':', aiResponse);
     
     // Parse and validate response
     let blockData;
     try {
-      const cleaned = response
+      const cleaned = aiResponse
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim();
@@ -196,11 +204,26 @@ export default async function run(input: BlockOperationInput): Promise<BlockOper
         hasCards: !!blockData.cards,
         cardsCount: blockData.cards ? blockData.cards.length : 0
       });
-    } catch (error) {
-      console.error('❌ Failed to parse AI response:', error);
+    } catch (parseError: any) {
+      console.error('❌ Failed to parse AI response:', parseError.message);
+      console.error('📝 Raw AI response:', aiResponse);
+      
+      // Try to find the error location
+      if (parseError.message.includes('position')) {
+        const match = parseError.message.match(/position (\d+)/);
+        if (match) {
+          const position = parseInt(match[1]);
+          const start = Math.max(0, position - 100);
+          const end = Math.min(aiResponse.length, position + 100);
+          console.error(`📍 Error context (${start}-${end}):`);
+          console.error(aiResponse.substring(start, end));
+          console.error(' '.repeat(position - start) + '^');
+        }
+      }
+      
       return {
         success: false,
-        error: `Failed to parse AI response: ${error}`
+        error: `Failed to parse AI response: ${parseError.message}`
       };
     }
     

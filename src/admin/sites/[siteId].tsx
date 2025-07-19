@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { EntryFormModal } from '../../../components/EntryFormModal';
+import { EntryFormModal } from '../../components/EntryFormModal';
 
 interface Entry {
   id: string;

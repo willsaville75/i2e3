@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import MediaLibrary from '../../components/MediaLibrary';
+import MediaLibrary from '../components/MediaLibrary';
 
 export default function MediaPage() {
   const [testData, setTestData] = useState<any>(null);

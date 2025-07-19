@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { SiteFormModal } from '../../../components/SiteFormModal';
+import { SiteFormModal } from '../../components/SiteFormModal';
 
 interface Site {
   id: string;

@@ -1,34 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useBlocksStore } from '../../store/blocksStore';
+import { useIndyChatStore, ChatMessage } from '../../store/indyChatStore';
 import { createDefaultBlockData } from '../../ai/indyFunctions';
+import { runSchemaPresenterAgent } from '../../indy/agents/schemaPresenterAgent';
 
-export interface ChatMessage {
-  id: string;
-  type: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  metadata?: {
-    action?: any;
-    confidence?: number;
-    agentUsed?: string;
-    classification?: {
-      primaryIntent: string;
-      reasoning: string;
-      strategy?: string;
-    };
-    explanation?: string;
-    proactiveSuggestions?: Array<{
-      title: string;
-      description: string;
-      example: string;
-      category: string;
-      confidence: number;
-    }>;
-    contextualTips?: string[];
-    actionSummary?: string;
-    followUpQuestions?: string[];
-  };
-}
+export type { ChatMessage } from '../../store/indyChatStore';
 
 export interface IndyChatConfig {
   useEnhancedClassification: boolean;
@@ -44,70 +20,100 @@ export interface UseIndyChatReturn {
   clearHistory: () => void;
   updateConfig: (updates: Partial<IndyChatConfig>) => void;
   setInputValue: (value: string) => void;
+  addSystemMessage: (content: string) => void;
 }
-
-const SESSION_ID = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-// Singleton state for chat
-let sharedMessages: ChatMessage[] = [
-  {
-    id: '1',
-    type: 'assistant',
-    content: 'Hi! I\'m Indy, your super intelligent AI assistant. I can help you update content, adjust layouts, change colors, and more. I learn from our conversations to provide better, more personalized assistance!',
-    timestamp: new Date()
-  }
-];
-let sharedIsLoading = false;
-let sharedConfig: IndyChatConfig = {
-  useEnhancedClassification: false,
-  useSuperIntelligence: false,
-  sessionId: SESSION_ID
-};
-
-// Listeners for state changes
-const listeners = new Set<() => void>();
-
-const notifyListeners = () => {
-  listeners.forEach(listener => listener());
-};
 
 export const useIndyChat = (): UseIndyChatReturn => {
   const { selectedIndex, blocks } = useBlocksStore();
-  
-  // Force re-render when shared state changes
-  const [, forceUpdate] = useState({});
-  
-  useEffect(() => {
-    const listener = () => forceUpdate({});
-    listeners.add(listener);
-    return () => {
-      listeners.delete(listener);
-    };
-  }, []);
+  const { 
+    messages, 
+    isLoading, 
+    sessionId,
+    config,
+    schemaNavigation, 
+    updateSchemaPath,
+    addMessage,
+    setMessages,
+    setIsLoading,
+    updateConfig: updateStoreConfig,
+    clearMessages
+  } = useIndyChatStore();
 
   const sendMessage = useCallback(async (userMessage: string) => {
     try {
       console.log('🎯 useIndyChat.sendMessage called with:', userMessage);
-      if (!userMessage.trim() || sharedIsLoading) return;
+      if (!userMessage.trim() || isLoading) return;
 
-      sharedIsLoading = true;
-      notifyListeners(); // Notify listeners to re-render
+      setIsLoading(true);
 
-      // Add user message
-      const userMessageObj: ChatMessage = {
-        id: Date.now().toString(),
-        type: 'user',
-        content: userMessage,
-        timestamp: new Date()
-      };
-      sharedMessages = [...sharedMessages, userMessageObj];
-      notifyListeners(); // Notify listeners to re-render
+      // Check if we're in schema navigation mode
+      if (schemaNavigation && (userMessage.match(/^\d+$/) || userMessage.toLowerCase() === 'back')) {
+        console.log('🧭 Schema navigation command detected:', userMessage);
+        
+        // Add user message to chat
+        const userMessageObj: ChatMessage = {
+          id: Date.now().toString(),
+          role: 'user',
+          type: 'user',
+          content: userMessage,
+          timestamp: new Date()
+        };
+        addMessage(userMessageObj);
+
+        try {
+          // Call schema presenter agent with navigation
+          const response = await runSchemaPresenterAgent({
+            blockType: schemaNavigation.blockType || 'hero',
+            selectedBlock: schemaNavigation.selectedBlockData,
+            navigationPath: schemaNavigation.currentPath,
+            userSelection: userMessage
+          });
+
+          // Update navigation path if needed
+          if (response.navigationState) {
+            updateSchemaPath(response.navigationState.currentPath);
+          }
+
+          // Add assistant response
+          const assistantMessageObj: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            type: 'assistant',
+            content: response.message,
+            timestamp: new Date()
+          };
+          addMessage(assistantMessageObj);
+        } catch (error) {
+          console.error('Error in schema navigation:', error);
+          const errorMessageObj: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            type: 'assistant',
+            content: '❌ Sorry, I encountered an error navigating the schema. Please try again.',
+            timestamp: new Date()
+          };
+          addMessage(errorMessageObj);
+        } finally {
+          setIsLoading(false);
+        }
+        return;
+      }
 
       try {
+        // Add user message to chat
+        const userMsg: ChatMessage = {
+          id: Date.now().toString(),
+          role: 'user',
+          type: 'user',
+          content: userMessage,
+          timestamp: new Date()
+        };
+        addMessage(userMsg);
+
         // Prepare API request
         const requestBody = {
           userInput: userMessage,
-          sessionId: sharedConfig.sessionId,
+          sessionId: sessionId,
           blockId: selectedIndex !== null ? blocks[selectedIndex]?.id : undefined,
           blockType: selectedIndex !== null ? blocks[selectedIndex]?.blockType : undefined,
           blockData: selectedIndex !== null ? blocks[selectedIndex]?.blockData : undefined,
@@ -116,8 +122,8 @@ export const useIndyChat = (): UseIndyChatReturn => {
             totalBlocks: blocks.length,
             route: window.location.pathname
           },
-          useEnhancedClassification: sharedConfig.useEnhancedClassification,
-          useSuperIntelligence: sharedConfig.useSuperIntelligence
+          useEnhancedClassification: config.useEnhancedClassification,
+          useSuperIntelligence: config.useSuperIntelligence
         };
 
         // Call API
@@ -146,13 +152,13 @@ export const useIndyChat = (): UseIndyChatReturn => {
         // Add assistant response
         const assistantMessageObj: ChatMessage = {
           id: (Date.now() + 1).toString(),
+          role: 'assistant',
           type: 'assistant',
           content: reply,
           timestamp: new Date(),
           metadata
         };
-        sharedMessages = [...sharedMessages, assistantMessageObj];
-        notifyListeners(); // Notify listeners to re-render
+        addMessage(assistantMessageObj);
 
       } catch (error) {
         console.error('Error sending message:', error);
@@ -160,60 +166,75 @@ export const useIndyChat = (): UseIndyChatReturn => {
         const errorMessage = getErrorMessage(error);
         const errorMessageObj: ChatMessage = {
           id: (Date.now() + 1).toString(),
+          role: 'assistant',
           type: 'assistant',
           content: `❌ Error: ${errorMessage}`,
           timestamp: new Date()
         };
-        sharedMessages = [...sharedMessages, errorMessageObj];
-        notifyListeners(); // Notify listeners to re-render
+        addMessage(errorMessageObj);
       } finally {
-        sharedIsLoading = false;
-        notifyListeners(); // Notify listeners to re-render
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Error in sendMessage:', error);
       const errorMessage = getErrorMessage(error);
       const errorMessageObj: ChatMessage = {
         id: (Date.now() + 1).toString(),
+        role: 'assistant',
         type: 'assistant',
         content: `❌ Error: ${errorMessage}`,
         timestamp: new Date()
       };
-      sharedMessages = [...sharedMessages, errorMessageObj];
-      notifyListeners(); // Notify listeners to re-render
+      addMessage(errorMessageObj);
+      setIsLoading(false);
     }
-  }, [selectedIndex, blocks]);
+  }, [selectedIndex, blocks, schemaNavigation, updateSchemaPath, isLoading, sessionId, config, addMessage, setIsLoading]);
 
   const clearHistory = useCallback(() => {
-    sharedMessages = [
-      {
-        id: Date.now().toString(),
-        type: 'assistant',
-        content: 'Chat history cleared! I\'m ready to help you with your CMS pages.',
-        timestamp: new Date()
-      }
-    ];
-    notifyListeners(); // Notify listeners to re-render
-  }, []);
+    clearMessages();
+    const welcomeMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'assistant',
+      type: 'assistant',
+      content: 'Chat history cleared! I\'m ready to help you with your CMS pages.',
+      timestamp: new Date()
+    };
+    addMessage(welcomeMessage);
+  }, [clearMessages, addMessage]);
 
   const updateConfig = useCallback((updates: Partial<IndyChatConfig>) => {
-    sharedConfig = { ...sharedConfig, ...updates };
-    notifyListeners(); // Notify listeners to re-render
-  }, []);
+    updateStoreConfig(updates);
+  }, [updateStoreConfig]);
 
   const setInputValue = useCallback((_value: string) => {
     // This will be handled by the UI component
     // Included here for interface completeness
   }, []);
 
+  const addSystemMessage = useCallback((content: string) => {
+    const systemMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'assistant',
+      type: 'assistant',
+      content,
+      timestamp: new Date()
+    };
+    addMessage(systemMessage);
+  }, [addMessage]);
+
   return {
-    messages: sharedMessages,
-    isLoading: sharedIsLoading,
-    config: sharedConfig,
+    messages,
+    isLoading,
+    config: {
+      useEnhancedClassification: config.useEnhancedClassification,
+      useSuperIntelligence: config.useSuperIntelligence,
+      sessionId
+    },
     sendMessage,
     clearHistory,
     updateConfig,
-    setInputValue
+    setInputValue,
+    addSystemMessage
   };
 };
 

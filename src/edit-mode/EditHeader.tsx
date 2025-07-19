@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useEditMode } from './EditModeProvider';
-import { icons } from '../blocks/shared/icons';
+import { useIndyChatStore } from '../store/indyChatStore';
+import { ComputerDesktopIcon, DeviceTabletIcon, DevicePhoneMobileIcon, ChevronRightIcon, CheckIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline';
 
 type PreviewMode = 'desktop' | 'tablet' | 'mobile';
 
 interface EditHeaderProps {
   previewMode?: PreviewMode;
   onPreviewModeChange?: (mode: PreviewMode) => void;
-  isPropsOpen?: boolean;
-  onToggleProps?: () => void;
 }
 
 export const EditHeader: React.FC<EditHeaderProps> = ({
   previewMode: externalPreviewMode,
-  onPreviewModeChange,
-  isPropsOpen = false,
-  onToggleProps
+  onPreviewModeChange
 }) => {
   const { entry, toggleEditMode, saveChanges, hasUnsavedChanges, isSaving } = useEditMode();
   const [internalPreviewMode, setInternalPreviewMode] = useState<PreviewMode>('desktop');
@@ -37,6 +34,12 @@ export const EditHeader: React.FC<EditHeaderProps> = ({
       if (hasUnsavedChanges) {
         await saveChanges();
       }
+      
+      // Clear chat when exiting edit mode
+      const { clearMessages, setSchemaNavigation } = useIndyChatStore.getState();
+      clearMessages();
+      setSchemaNavigation(null); // Also clear navigation state
+      
       toggleEditMode(); // Exit edit mode
     } catch (error) {
       console.error('Error saving changes:', error);
@@ -70,6 +73,11 @@ export const EditHeader: React.FC<EditHeaderProps> = ({
         }
       }
       
+      // Clear chat when exiting edit mode
+      const { clearMessages, setSchemaNavigation } = useIndyChatStore.getState();
+      clearMessages();
+      setSchemaNavigation(null);
+      
       // Exit edit mode
       toggleEditMode();
     } catch (error) {
@@ -79,77 +87,10 @@ export const EditHeader: React.FC<EditHeaderProps> = ({
 
   if (!entry) return null;
 
-  // Icons
-  const MenuIcon = icons.navigation.menu;
-  const UndoIcon = icons.actions.backward;
-  const RedoIcon = icons.actions.forward;
-  const ChevronRightIcon = icons.navigation.chevronRight;
-  const CheckIcon = icons.status.complete;
-  const DesktopIcon = icons.technology.desktop;
-  const MobileIcon = icons.technology.mobile;
-  const CloudUploadIcon = icons.actions.upload;
-
-  // For now, we'll disable undo/redo since it's not implemented in the blocks store
-  const canUndo = false;
-  const canRedo = false;
-  const undo = () => {};
-  const redo = () => {};
-
   return (
     <div className="h-12 bg-zinc-800 border-b border-zinc-700 flex items-center justify-between px-4 relative z-50" data-testid="edit-header">
       {/* Left Section - Site/Page Info & Controls */}
       <div className="flex items-center space-x-4">
-        {/* Properties Panel Toggle */}
-        {onToggleProps && (
-          <motion.button
-            onClick={onToggleProps}
-            className={`p-2 rounded-lg transition-colors ${
-              isPropsOpen 
-                ? 'bg-purple-600 text-white shadow-lg' 
-                : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
-            }`}
-            title="Toggle Properties Panel"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            data-testid="props-toggle"
-          >
-            <MenuIcon className="w-5 h-5" />
-          </motion.button>
-        )}
-
-        {/* History Controls */}
-        <div className="flex items-center space-x-1">
-          <motion.button
-            onClick={undo}
-            disabled={!canUndo}
-            className={`p-2 rounded-lg transition-colors ${
-              canUndo 
-                ? 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600' 
-                : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-            }`}
-            title="Undo"
-            whileHover={canUndo ? { scale: 1.05 } : {}}
-            whileTap={canUndo ? { scale: 0.95 } : {}}
-          >
-            <UndoIcon className="w-4 h-4" />
-          </motion.button>
-          
-          <motion.button
-            onClick={redo}
-            disabled={!canRedo}
-            className={`p-2 rounded-lg transition-colors ${
-              canRedo 
-                ? 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600' 
-                : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-            }`}
-            title="Redo"
-            whileHover={canRedo ? { scale: 1.05 } : {}}
-            whileTap={canRedo ? { scale: 0.95 } : {}}
-          >
-            <RedoIcon className="w-4 h-4" />
-          </motion.button>
-        </div>
-
         {/* Site/Page Breadcrumb */}
         <div className="flex items-center space-x-2 text-zinc-300">
           <span className="text-sm font-medium">{entry.site.name}</span>
@@ -204,7 +145,7 @@ export const EditHeader: React.FC<EditHeaderProps> = ({
                 </>
               ) : (
                 <>
-                  <CloudUploadIcon className="w-3 h-3" />
+                  <CloudArrowUpIcon className="w-3 h-3" />
                   <span>Publish</span>
                 </>
               )}
@@ -212,7 +153,7 @@ export const EditHeader: React.FC<EditHeaderProps> = ({
           )}
         </div>
 
-        {/* Device Preview Buttons */}
+        {/* Device Preview Buttons - Text only, no icons */}
         <div className="flex items-center bg-zinc-700 rounded-lg p-1">
           <motion.button
             onClick={() => handlePreviewModeChange('desktop')}
@@ -225,8 +166,8 @@ export const EditHeader: React.FC<EditHeaderProps> = ({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <DesktopIcon className="w-4 h-4" />
-            <span className="text-xs">Desktop</span>
+            <ComputerDesktopIcon className="w-3.5 h-3.5" />
+            <span className="text-xs font-medium">Desktop</span>
           </motion.button>
           
           <motion.button
@@ -240,11 +181,8 @@ export const EditHeader: React.FC<EditHeaderProps> = ({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
-              <line x1="12" y1="18" x2="12.01" y2="18" />
-            </svg>
-            <span className="text-xs">Tablet</span>
+            <DeviceTabletIcon className="w-3.5 h-3.5" />
+            <span className="text-xs font-medium">Tablet</span>
           </motion.button>
           
           <motion.button
@@ -258,8 +196,8 @@ export const EditHeader: React.FC<EditHeaderProps> = ({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <MobileIcon className="w-4 h-4" />
-            <span className="text-xs">Mobile</span>
+            <DevicePhoneMobileIcon className="w-3.5 h-3.5" />
+            <span className="text-xs font-medium">Mobile</span>
           </motion.button>
         </div>
       </div>

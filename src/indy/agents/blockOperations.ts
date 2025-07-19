@@ -27,9 +27,19 @@ export default async function run(input: BlockOperationInput): Promise<BlockOper
   const startTime = Date.now();
   const { operation, blockType, intent, currentData, tokens = {} } = input;
   
+  console.log('🔍 BlockOperations Input:', {
+    operation,
+    blockType,
+    intent,
+    hasCurrentData: !!currentData,
+    tokens: Object.keys(tokens)
+  });
+  
   try {
     // If no blockType is provided and operation is create, let AI select it
     if (!blockType && operation === 'create') {
+      console.log('🤖 No blockType provided, letting AI select...');
+      
       // Build prompt for block selection
       const prompt = buildOpenAIPromptForBlock({
         blockType: undefined,
@@ -38,6 +48,8 @@ export default async function run(input: BlockOperationInput): Promise<BlockOper
         instructions: intent
       });
       
+      console.log('📝 Block Selection Prompt:', prompt);
+      
       // Call AI to select block type and generate content
       const response = await callAI({
         prompt,
@@ -45,6 +57,8 @@ export default async function run(input: BlockOperationInput): Promise<BlockOper
         maxTokens: 800,
         temperature: 0.2
       });
+      
+      console.log('🤖 AI Raw Response:', response);
       
       // Parse response expecting both block selection and content
       let parsedResponse;
@@ -55,11 +69,18 @@ export default async function run(input: BlockOperationInput): Promise<BlockOper
           .trim();
         parsedResponse = JSON.parse(cleaned);
       } catch (error) {
+        console.error('❌ Failed to parse AI response:', error);
         return {
           success: false,
           error: `Failed to parse AI response: ${error}`
         };
       }
+      
+      console.log('📦 Parsed AI Response:', {
+        selectedBlockType: parsedResponse.selectedBlockType,
+        hasBlockContent: !!parsedResponse.blockContent,
+        blockContentKeys: parsedResponse.blockContent ? Object.keys(parsedResponse.blockContent) : []
+      });
       
       // Validate response has required fields
       if (!parsedResponse.selectedBlockType || !parsedResponse.blockContent) {
@@ -105,13 +126,34 @@ export default async function run(input: BlockOperationInput): Promise<BlockOper
     let prompt: string;
     
     if (operation === 'create') {
-      // Direct creation prompt (optimized for speed)
+      // Get block entry for schema
+      const blockEntry = blockRegistry[blockType];
+      
+      console.log('📚 Block Registry Entry:', {
+        blockType,
+        hasSchema: !!blockEntry.schema,
+        hasAIHints: !!blockEntry.aiHints,
+        hasDefaults: !!blockEntry.defaultData,
+        aiHintKeys: blockEntry.aiHints ? Object.keys(blockEntry.aiHints) : []
+      });
+      
+      // Create context with schema
+      const context = {
+        blockType,
+        intent,
+        schema: blockEntry.schema,
+        aiHints: blockEntry.aiHints,
+        defaults: blockEntry.defaultData
+      };
+      
       prompt = buildOpenAIPromptForBlock({
         blockType,
-        context: { blockType, intent },
+        context,
         mode: 'create',
         instructions: intent
       });
+      
+      console.log('📝 Create Prompt:', prompt);
     } else {
       // Update prompt with context
       const basicTokens = {
@@ -128,15 +170,17 @@ export default async function run(input: BlockOperationInput): Promise<BlockOper
       });
     }
     
-    // Call AI with optimized parameters
+    // Call AI with the prompt
     const response = await callAI({
       prompt,
       model: getFastModel(),
-      maxTokens: 500,
+      maxTokens: 800,
       temperature: 0.2
     });
     
-    // Parse response
+    console.log('🤖 AI Raw Response for', operation, ':', response);
+    
+    // Parse and validate response
     let blockData;
     try {
       const cleaned = response
@@ -144,7 +188,16 @@ export default async function run(input: BlockOperationInput): Promise<BlockOper
         .replace(/```\n?/g, '')
         .trim();
       blockData = JSON.parse(cleaned);
+      
+      console.log('📦 Parsed Block Data:', {
+        topLevelKeys: Object.keys(blockData),
+        hasElements: !!blockData.elements,
+        hasLayout: !!blockData.layout,
+        hasCards: !!blockData.cards,
+        cardsCount: blockData.cards ? blockData.cards.length : 0
+      });
     } catch (error) {
+      console.error('❌ Failed to parse AI response:', error);
       return {
         success: false,
         error: `Failed to parse AI response: ${error}`

@@ -1,6 +1,8 @@
 import { summariseBlockSchemaForAI } from '../../blocks/utils/summariseBlockSchemaForAI';
 import { compressBlockUpdateContextForTarget } from '../../blocks/utils/compressBlockUpdateContextForTarget';
 import { getAvailableBlocksForAI } from '../../blocks';
+import { prepareBlockAIContext } from '../../blocks/utils/prepareBlockAIContext';
+import { blockRegistry } from '../../blocks';
 
 export interface PromptInput {
   blockType?: string; // Made optional for block selection
@@ -29,29 +31,25 @@ export function buildOpenAIPromptForBlock(input: PromptInput): string {
     
     return `You are an expert UI content assistant. Based on the user's request, select the most appropriate block type AND generate its content.
 
-User Intent: "${instructions}"
+Available block types:
+${availableBlocks.map(block => `- ${block.type}: ${block.description} (${block.useCase})`).join('\n')}
 
-Available Block Types:
-${availableBlocks.map(block => `- ${block.type}: ${block.description} (Use for: ${block.useCase})`).join('\n')}
+User request: "${instructions || context.intent}"
 
-IMPORTANT: Return a JSON object with TWO properties:
-1. "selectedBlockType": The chosen block type (must be one of: ${availableBlocks.map(b => b.type).join(', ')})
-2. "blockContent": The generated content for that block type
+Analyze the user's intent and:
+1. Select the most appropriate block type
+2. Generate content that matches the block's schema
 
-Example response format:
+Return a JSON response in this format:
 {
-  "selectedBlockType": "hero",
-  "blockContent": {
-    "elements": { ... },
-    "layout": { ... },
-    "background": { ... }
-  }
+  "selectedBlockType": "[chosen block type]",
+  "blockContent": { ... generated content matching the block's schema ... }
 }
 
 Select the block type that best matches the user's intent and generate appropriate content.`;
   }
 
-  // Build the base instruction (concise)
+  // Build the base instruction
   const base = `You are an expert UI content assistant. ${mode === 'create' ? 'Create' : 'Update'} a "${blockType}" block.`;
 
   // Add user instructions if provided
@@ -63,77 +61,69 @@ Select the block type that best matches the user's intent and generate appropria
     return `${base}${goal}\n\nTarget: ${target}\nCurrent: ${JSON.stringify(compressedContext.current, null, 2)}\n\nReturn only valid JSON matching the existing structure.`;
   }
 
-  // For hero blocks, use specific structure template
-  if (blockType === 'hero') {
-    // For update mode with current data, use the current data as base
-    if (mode === 'update' && context.current) {
-      return `${base}${goal}
+  // Get block entry from registry
+  const blockEntry = blockRegistry[blockType];
+  if (!blockEntry) {
+    throw new Error(`Block type "${blockType}" not found in registry`);
+  }
+
+  // For update mode with current data
+  if (mode === 'update' && context.current) {
+    return `${base}${goal}
 
 Current Data:
 ${JSON.stringify(context.current, null, 2)}
 
-BACKGROUND GUIDANCE:
-- For solid colors, use: "background": { "type": "color", "color": "blue", "colorIntensity": "medium" }
-- For gradients, use: "background": { "type": "gradient", "gradient": "forest" }
-- Available gradient presets: sunset, ocean, purple, forest, fire, sky, rose, mint
-- For images, use: "background": { "type": "image", "image": { "url": "...", "position": "center", "size": "cover" } }
-- For videos, use: "background": { "type": "video", "video": { "url": "...", "poster": "..." } }
+${blockEntry.aiHints?.contentGuidelines ? `Guidelines: ${JSON.stringify(blockEntry.aiHints.contentGuidelines)}` : ''}
 
-IMPORTANT: If user mentions "forest", "ocean", "sunset", "fire", "sky", "rose", "mint", or "purple" for background, use gradient type with the corresponding preset.
-
-Update the content based on the user's intent while preserving the existing structure and any properties not mentioned in the request.
-
-Return ONLY valid JSON with your updates. Keep the same structure and preserve any existing settings (like background, layout) unless specifically requested to change them.`;
-    }
-    
-    // For create mode or when no current data, use template
-    return `${base}${goal}
-
-BACKGROUND GUIDANCE:
-- For solid colors, use: "background": { "type": "color", "color": "blue", "colorIntensity": "medium" }
-- For gradients, use: "background": { "type": "gradient", "gradient": "forest" }
-- Available gradient presets: sunset, ocean, purple, forest, fire, sky, rose, mint
-- For images, use: "background": { "type": "image", "image": { "url": "...", "position": "center", "size": "cover" } }
-- For videos, use: "background": { "type": "video", "video": { "url": "...", "poster": "..." } }
-
-IMPORTANT: If user mentions "forest", "ocean", "sunset", "fire", "sky", "rose", "mint", or "purple" for background, use gradient type with the corresponding preset.
-
-Return ONLY valid JSON in this EXACT format:
-{
-  "elements": {
-    "title": { "content": "[Generated title based on context]", "level": 1 },
-    "subtitle": { "content": "[Generated subtitle based on context]" },
-    "button": { "text": "[Action]", "href": "/[path]", "variant": "primary", "size": "lg" }
-  },
-  "layout": {
-    "blockSettings": { "height": "screen", "margin": { "top": "lg", "bottom": "lg" } },
-    "contentSettings": {
-      "contentAlignment": { "horizontal": "center", "vertical": "center" },
-      "textAlignment": "center",
-      "contentWidth": "wide",
-      "padding": { "top": "2xl", "bottom": "2xl" }
-    }
-  },
-  "background": { "type": "color", "color": "blue", "colorIntensity": "medium" }
-}
-
-Make the content engaging and relevant to the user's intent. No explanations, just JSON.`;
+Update the content based on the user's intent while preserving the existing structure.
+Return ONLY valid JSON with your updates.`;
   }
 
-  // For create mode, use minimal schema (optimized settings)
-  if (mode === 'create') {
-    const minimalSchema = summariseBlockSchemaForAI(context.schema, {
-      includeEnums: false,    // Skip enums to reduce size
-      includeDefaults: false, // Skip defaults to reduce size
-      maxDepth: 1,           // Shallow depth
-      includeHints: false    // Skip hints to reduce size
-    });
-
-    return `${base}${goal}\n\nSchema: ${minimalSchema}\n\nReturn only valid JSON matching the schema structure. No explanations.`;
-  }
-
-  // For update mode, use current data and minimal context
-  const currentData = context.current ? JSON.stringify(context.current, null, 2) : '';
+  // For create mode, use schema summary and AI hints
+  const schemaSummary = summariseBlockSchemaForAI(blockEntry.schema, {
+    includeHints: true,
+    includeDefaults: true,
+    includeEnums: true,
+    maxDepth: 3
+  });
   
-  return `${base}${goal}\n\nCurrent Data:\n${currentData}\n\nReturn only valid JSON with your updates. Keep the same structure.`;
+  console.log(`\n📋 Schema Summary for ${blockType}:\n${schemaSummary}\n`);
+
+  // Build AI hints section
+  let aiHintsSection = '';
+  if (blockEntry.aiHints) {
+    const hints = blockEntry.aiHints;
+    
+    if (hints.contentPatterns) {
+      // Try to match user intent with content patterns
+      const intentWords = (instructions || '').toLowerCase();
+      for (const [pattern, config] of Object.entries(hints.contentPatterns)) {
+        if (intentWords.includes(pattern)) {
+          aiHintsSection += `\nSuggested configuration for ${pattern}: ${JSON.stringify(config)}`;
+          break;
+        }
+      }
+    }
+
+    if (hints.contentGuidelines) {
+      aiHintsSection += `\nContent Guidelines: ${JSON.stringify(hints.contentGuidelines)}`;
+    }
+  }
+
+  return `${base}${goal}
+
+Schema Structure:
+${schemaSummary}
+
+${aiHintsSection}
+
+CRITICAL: You MUST follow the exact property names and structure shown above. 
+- Use the EXACT field names as specified (e.g., if the schema shows "cards", do NOT use "items")
+- Match the nested structure exactly as shown
+- Include all required fields
+- Use the correct data types for each field
+
+Generate content that matches the schema structure exactly. Be creative with the content while maintaining the required format.
+Return ONLY valid JSON. No explanations.`;
 } 

@@ -9,7 +9,7 @@ import { runAgent } from './orchestrator';
  * @returns Object containing the selected agent name and result
  */
 export async function runIndy(input: string) {
-  const agentName = classifyIntentToAgent(input);
+  const agentName = await classifyIntentToAgent(input);
   const result = await runAgent(agentName, input);
   return { agentName, result };
 } 

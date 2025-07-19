@@ -1,30 +1,20 @@
-// Central block registry
+// Import all blocks
 import { HeroBlock } from './hero/hero-block';
-import { heroMetadata, heroAIHints } from './hero/metadata';
 import { heroSchema, heroDefaultData } from './hero/schema';
+import { heroMetadata, heroAIHints } from './hero/metadata';
 
-// Block registry interface
+import { GridBlock } from './grid/grid-block';
+import { gridSchema, gridDefaultData } from './grid/schema';
+import { gridMetadata } from './grid/metadata';
+import { gridAIHints } from './grid/ai';
+
+// Block registry entry interface
 export interface BlockRegistryEntry {
-  component: any;
+  component: React.ComponentType<any>;
   schema: any;
   defaultData: any;
-  metadata: {
-    name: string;
-    description: string;
-    category: string;
-    icon: string;
-    tags: string[];
-    version: string;
-    author: string;
-    isAIGenerated: boolean;
-    hints?: Record<string, any>;
-  };
-  aiHints: {
-    description: string;
-    usageContext: any;
-    contentHints?: any;
-    layoutGuidance?: any;
-  };
+  metadata: any;
+  aiHints: any;
 }
 
 // Main block registry
@@ -35,14 +25,23 @@ export const blockRegistry: Record<string, BlockRegistryEntry> = {
     defaultData: heroDefaultData,
     metadata: heroMetadata,
     aiHints: heroAIHints
+  },
+  grid: {
+    component: GridBlock,
+    schema: gridSchema,
+    defaultData: gridDefaultData,
+    metadata: gridMetadata,
+    aiHints: gridAIHints
   }
 };
 
 // Export individual blocks
 export { HeroBlock } from './hero/hero-block';
+export { GridBlock } from './grid/grid-block';
 
 // Export block types
 export type { HeroProps } from './hero/schema';
+export type { GridProps } from './grid/schema';
 
 // Export utilities
 export * from './utils';

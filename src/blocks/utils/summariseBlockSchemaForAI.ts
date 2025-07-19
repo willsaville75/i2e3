@@ -44,16 +44,36 @@ function processSchemaProperties(
         options
       );
       fields.push(...nestedFields);
-    } else if (fieldInfo.type === 'array' && fieldInfo.items?.properties) {
-      // Handle arrays with object items
-      const arrayFields = processSchemaProperties(
-        fieldInfo.items.properties,
-        `${currentPath}[]`,
-        depth + 1,
-        maxDepth,
-        options
-      );
-      fields.push(...arrayFields);
+    } else if (fieldInfo.type === 'array') {
+      // Handle arrays more clearly
+      let arrayDescription = `- ${currentPath}: array`;
+      
+      // Add title if available
+      if (fieldInfo.title) {
+        arrayDescription += ` (${fieldInfo.title})`;
+      }
+      
+      // Add description if available
+      if (fieldInfo.description) {
+        arrayDescription += ` - ${fieldInfo.description}`;
+      }
+      
+      fields.push(arrayDescription);
+      
+      // If array has object items with properties, show the structure
+      if (fieldInfo.items?.properties) {
+        fields.push(`  Structure of each ${key} item:`);
+        const arrayFields = processSchemaProperties(
+          fieldInfo.items.properties,
+          `  `,
+          depth + 1,
+          maxDepth,
+          options
+        );
+        fields.push(...arrayFields.map(field => `  ${field}`));
+      } else if (fieldInfo.items?.type) {
+        fields.push(`  - Each item is: ${fieldInfo.items.type}`);
+      }
     } else if (fieldInfo.type) {
       // Process leaf field
       fields.push(formatFieldInfo(currentPath, fieldInfo, options));
@@ -131,6 +151,53 @@ function extractHints(schema: any): string[] {
 }
 
 /**
+ * Generates a simple example JSON structure from schema properties
+ */
+function generateExampleStructure(properties: any, depth: number = 0): string {
+  if (!properties || typeof properties !== 'object' || depth > 3) {
+    return '{}';
+  }
+
+  const indent = '  '.repeat(depth);
+  const lines: string[] = ['{'];
+
+  const entries = Object.entries(properties);
+  entries.forEach(([key, value], index) => {
+    const fieldInfo = value as any;
+    const isLast = index === entries.length - 1;
+    const comma = isLast ? '' : ',';
+
+    if (fieldInfo.type === 'object' && fieldInfo.properties) {
+      lines.push(`${indent}  "${key}": ${generateExampleStructure(fieldInfo.properties, depth + 1)}${comma}`);
+    } else if (fieldInfo.type === 'array') {
+      if (fieldInfo.items?.properties) {
+        // Array of objects
+        lines.push(`${indent}  "${key}": [`);
+        lines.push(`${indent}    ${generateExampleStructure(fieldInfo.items.properties, depth + 2)}`);
+        lines.push(`${indent}  ]${comma}`);
+      } else {
+        // Simple array
+        lines.push(`${indent}  "${key}": []${comma}`);
+      }
+    } else if (fieldInfo.type === 'string') {
+      const example = fieldInfo.default || (fieldInfo.enum ? fieldInfo.enum[0] : "...");
+      lines.push(`${indent}  "${key}": "${example}"${comma}`);
+    } else if (fieldInfo.type === 'number') {
+      const example = fieldInfo.default || (fieldInfo.enum ? fieldInfo.enum[0] : 0);
+      lines.push(`${indent}  "${key}": ${example}${comma}`);
+    } else if (fieldInfo.type === 'boolean') {
+      const example = fieldInfo.default || false;
+      lines.push(`${indent}  "${key}": ${example}${comma}`);
+    } else {
+      lines.push(`${indent}  "${key}": null${comma}`);
+    }
+  });
+
+  lines.push(`${indent}}`);
+  return lines.join('\n');
+}
+
+/**
  * Summarizes a block schema for AI consumption
  * 
  * @param schema - The block schema object to summarize
@@ -191,6 +258,11 @@ export function summariseBlockSchemaForAI(
       lines.push(...hints);
     }
   }
+
+  // Add example structure
+  lines.push('');
+  lines.push('**Expected JSON Structure:**');
+  lines.push(generateExampleStructure(schema.properties));
 
   return lines.join('\n');
 }

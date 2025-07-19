@@ -80,6 +80,19 @@ export const HERO_PROPERTY_MAPPINGS: PropertyMapping[] = [
     selector: 'content'
   },
   
+  // Section Width Constraint
+  {
+    path: 'layout.blockSettings.blockWidth',
+    type: 'className',
+    target: 'section-width',
+    transform: (value: boolean) => {
+      // When blockWidth is false, constrain the section to max-w-7xl and center it
+      // When blockWidth is true, let it be full width
+      return value ? 'w-full' : 'w-full max-w-7xl mx-auto';
+    },
+    selector: 'section'
+  },
+  
   // Block Height
   {
     path: 'layout.blockSettings.height',

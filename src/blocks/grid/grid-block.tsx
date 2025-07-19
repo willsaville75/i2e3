@@ -18,7 +18,13 @@ export const GridBlock: React.FC<GridBlockProps> = (props) => {
     hasLayout: !!layout,
     cardsLength: cards.length,
     cards: cards,
-    firstCardElements: cards[0]?.elements
+    firstCardElements: cards[0]?.elements,
+    firstCard: cards[0],
+    cardStructure: cards.map(c => ({
+      id: c?.id,
+      hasElements: !!c?.elements,
+      elementKeys: c?.elements ? Object.keys(c.elements) : []
+    }))
   });
   
   // Get dynamic property mappings for grid block
@@ -116,7 +122,9 @@ function CardComponent({ card }: CardComponentProps) {
   // Debug logging
   console.log('CardComponent rendering:', {
     cardId: card.id,
+    card: card,
     hasElements: !!elements,
+    elementKeys: elements ? Object.keys(elements) : [],
     titleContent: elements?.title?.content,
     subtitleContent: elements?.subtitle?.content,
     descriptionContent: elements?.description?.content

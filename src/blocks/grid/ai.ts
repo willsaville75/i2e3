@@ -8,17 +8,40 @@ export const gridAIHints = {
   ],
   structureGuidelines: [
     'Default to 3 columns on desktop, 2 on tablet, 1 on mobile',
-    'Use consistent card types within a grid'
+    'Use consistent card types within a grid',
+    'ALWAYS include all top-level properties: elements, layout, cards, background'
   ],
   propertyNotes: {
     cards: 'Array of card objects. Each element should have content, not empty objects.',
     important: 'Do NOT include empty objects like "icon": {} or "avatar": {}. Only include elements with actual values.',
-    avatar: 'Use { src: "image-url", alt: "description" } NOT { url: "..." }'
+    avatar: 'Use { src: "image-url", alt: "description" } NOT { url: "..." }',
+    structure: 'Response must have: elements (with sectionTitle), layout (with grid settings), cards (array), background'
   },
   minimalExample: `{
     "elements": {
       "sectionTitle": {
-        "content": "Our Team"
+        "content": "Our Team",
+        "level": 2
+      },
+      "sectionSubtitle": {
+        "content": "Meet the people behind our success"
+      }
+    },
+    "layout": {
+      "blockSettings": {
+        "blockWidth": false,
+        "height": "auto",
+        "margin": { "top": "lg", "bottom": "lg" }
+      },
+      "contentSettings": {
+        "textAlignment": "center",
+        "contentWidth": "wide",
+        "padding": { "top": "lg", "bottom": "lg", "left": "md", "right": "md" }
+      },
+      "grid": {
+        "columns": { "desktop": 3, "tablet": 2, "mobile": 1 },
+        "gap": "lg",
+        "alignItems": "stretch"
       }
     },
     "cards": [
@@ -42,8 +65,18 @@ export const gridAIHints = {
             "text": "View Profile",
             "href": "#"
           }
+        },
+        "layout": {
+          "cardType": "profile",
+          "padding": "md",
+          "alignment": "center"
         }
       }
-    ]
+    ],
+    "background": {
+      "type": "color",
+      "color": "white",
+      "colorIntensity": "light"
+    }
   }`
 }; 

@@ -357,8 +357,16 @@ function handleBlockUpdates(result: any): void {
         blockType: result.action.blockType,
         hasData: !!result.action.data,
         dataKeys: result.action.data ? Object.keys(result.action.data) : [],
-        fullData: result.action.data
+        fullData: result.action.data,
+        dataStructure: JSON.stringify(result.action.data, null, 2)
       });
+      
+      // Check if the data contains an error
+      if (result.action.data?.success === false) {
+        console.error('❌ Block creation failed:', result.action.data.error);
+        return; // Don't add the block if there was an error
+      }
+      
       const { addBlock } = useBlocksStore.getState();
       const blockData = result.action.data || createDefaultBlockData(result.action.blockType);
       console.log('📦 Final block data being added:', {

@@ -287,6 +287,15 @@ router.post('/action', async (req: Request, res: Response) => {
           message += ` The title "${result.blockData.elements.title.content}" has been set.`;
         }
         
+        // Check if the result indicates an error
+        if (result.success === false) {
+          return res.status(400).json({
+            success: false,
+            error: result.error || 'Failed to generate block content',
+            agentUsed: agentName
+          });
+        }
+        
         res.json({
           success: true,
           action: {

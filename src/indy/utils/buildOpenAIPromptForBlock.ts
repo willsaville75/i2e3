@@ -119,11 +119,12 @@ ${schemaSummary}
 ${aiHintsSection}
 
 CRITICAL: You MUST follow the exact property names and structure shown above. 
-- Use the EXACT field names as specified (e.g., if the schema shows "cards", do NOT use "items")
+- Use the EXACT field names as specified (e.g., if the schema shows "cards", do NOT use "items" or "teamCards")
 - Match the nested structure exactly as shown
 - Include all required fields
 - Use the correct data types for each field
+- The response MUST be a complete block data object with all top-level properties (elements, layout, cards, background)
 
 Generate content that matches the schema structure exactly. Be creative with the content while maintaining the required format.
-Return ONLY valid JSON. No explanations.`;
+Return ONLY valid JSON that can be directly used as block data. No explanations, no wrapper objects.`;
 } 

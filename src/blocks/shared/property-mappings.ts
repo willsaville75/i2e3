@@ -168,6 +168,10 @@ export const HERO_PROPERTY_MAPPINGS: PropertyMapping[] = [
     type: 'className',
     target: 'content-width',
     transform: (value: string) => {
+      // For full width, don't apply any max-width constraint
+      if (value === 'full') {
+        return null;
+      }
       // Read from tokens.ts as single source of truth
       return container.maxWidth[value as keyof typeof container.maxWidth] || container.maxWidth.wide;
     },
@@ -269,6 +273,10 @@ export function applyPropertyMappings(
   sectionStyles: React.CSSProperties;
   contentStyles: React.CSSProperties;
 } {
+  // Use Sets to prevent duplicate classes
+  const sectionClassSet = new Set<string>();
+  const contentClassSet = new Set<string>();
+  
   const result = {
     sectionClasses: [] as string[],
     contentClasses: [] as string[],
@@ -289,17 +297,23 @@ export function applyPropertyMappings(
     if (!transformed || transformed === '') return;
     
     // Apply based on type and selector
-    const targetClasses = mapping.selector === 'content' ? result.contentClasses : result.sectionClasses;
-    const targetStyles = mapping.selector === 'content' ? result.contentStyles : result.sectionStyles;
-    
     if (mapping.type === 'className') {
-      targetClasses.push(transformed);
+      if (mapping.selector === 'content') {
+        contentClassSet.add(transformed);
+      } else {
+        sectionClassSet.add(transformed);
+      }
     } else if (mapping.type === 'style') {
+      const targetStyles = mapping.selector === 'content' ? result.contentStyles : result.sectionStyles;
       // Convert CSS property name to camelCase for React styles
       const styleProp = mapping.target.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
       targetStyles[styleProp as keyof React.CSSProperties] = transformed as any;
     }
   });
+  
+  // Convert Sets back to arrays
+  result.sectionClasses = Array.from(sectionClassSet);
+  result.contentClasses = Array.from(contentClassSet);
   
   return result;
 }

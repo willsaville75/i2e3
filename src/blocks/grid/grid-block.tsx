@@ -196,71 +196,73 @@ function CardComponent({ card }: CardComponentProps) {
 
   return (
     <div className={cardClasses} style={backgroundStyles}>
-      {/* Card Header - Avatar/Icon, Title, Subtitle */}
-      {elements && (elements.icon || elements.avatar || elements.title || elements.subtitle) && (
-        <div className="card-header mb-4">
-          {/* Avatar or Icon */}
-          {elements.avatar && (
-            <div className={`mb-4 ${cardLayout.alignment === 'center' ? 'mx-auto' : cardLayout.alignment === 'right' ? 'ml-auto' : ''} w-24 h-24`}>
+      {/* Card Header - Avatar, Icon, Title, Subtitle */}
+      {elements && (
+        (elements.icon?.name || elements.avatar?.src || elements.title?.content || elements.subtitle?.content) && (
+          <div className="card-header mb-4">
+            {/* Avatar or Icon */}
+            {elements.avatar?.src && (
+              <div className={`mb-4 ${cardLayout.alignment === 'center' ? 'mx-auto' : cardLayout.alignment === 'right' ? 'ml-auto' : ''} w-24 h-24`}>
+                <ElementRenderer
+                  element={{
+                    type: 'image',
+                    props: {
+                      ...elements.avatar,
+                      className: 'w-full h-full rounded-full object-cover'
+                    }
+                  }}
+                />
+              </div>
+            )}
+            
+            {elements.icon?.name && !elements.avatar?.src && (
+              <div className={`mb-4 ${cardLayout.alignment === 'center' ? 'mx-auto' : cardLayout.alignment === 'right' ? 'ml-auto' : ''} w-fit`}>
+                <ElementRenderer
+                  element={{
+                    type: 'icon',
+                    props: elements.icon
+                  }}
+                />
+              </div>
+            )}
+            
+            {/* Title */}
+            {elements.title?.content && (
               <ElementRenderer
                 element={{
-                  type: 'image',
+                  type: 'title',
                   props: {
-                    ...elements.avatar,
-                    className: 'w-full h-full rounded-full object-cover'
+                    content: elements.title.content,
+                    level: elements.title.level || 3,
+                    weight: 'semibold',
+                    align: cardLayout.alignment as keyof typeof alignment.text
+                  }
+                }}
+                className="mb-2"
+              />
+            )}
+            
+            {/* Subtitle */}
+            {elements.subtitle?.content && (
+              <ElementRenderer
+                element={{
+                  type: 'text',
+                  props: {
+                    content: elements.subtitle.content,
+                    color: 'secondary',
+                    align: cardLayout.alignment as keyof typeof alignment.text
                   }
                 }}
               />
-            </div>
-          )}
-          
-          {elements.icon && !elements.avatar && (
-            <div className={`mb-4 ${cardLayout.alignment === 'center' ? 'mx-auto' : cardLayout.alignment === 'right' ? 'ml-auto' : ''} w-fit`}>
-              <ElementRenderer
-                element={{
-                  type: 'icon',
-                  props: elements.icon
-                }}
-              />
-            </div>
-          )}
-          
-          {/* Title */}
-          {elements.title && (
-            <ElementRenderer
-              element={{
-                type: 'title',
-                props: {
-                  content: elements.title.content,
-                  level: elements.title.level,
-                  weight: 'semibold',
-                  align: cardLayout.alignment as keyof typeof alignment.text
-                }
-              }}
-              className="mb-2"
-            />
-          )}
-          
-          {/* Subtitle */}
-          {elements.subtitle && (
-            <ElementRenderer
-              element={{
-                type: 'text',
-                props: {
-                  content: elements.subtitle.content,
-                  color: 'secondary',
-                  align: cardLayout.alignment as keyof typeof alignment.text
-                }
-              }}
-            />
-          )}
-        </div>
+            )}
+          </div>
+        )
       )}
       
       {/* Card Content - Description, Image */}
-      {elements && (elements.description || elements.image) && (
+      {elements && (elements.description?.content || elements.image?.src) && (
         <div className="card-content mb-4">
-          {elements.image && (
+          {elements.image?.src && (
             <ElementRenderer
               element={{
                 type: 'image',
@@ -272,7 +274,7 @@ function CardComponent({ card }: CardComponentProps) {
             />
           )}
           
-          {elements.description && (
+          {elements.description?.content && (
             <ElementRenderer
               element={{
                 type: 'text',
@@ -286,23 +288,35 @@ function CardComponent({ card }: CardComponentProps) {
         </div>
       )}
       
-      {/* Card Footer - Actions */}
-      {elements && (elements.primaryAction || elements.secondaryAction) && (
-        <div className={`card-footer mt-4 flex gap-2 ${cardLayout.alignment === 'center' ? 'justify-center' : cardLayout.alignment === 'right' ? 'justify-end' : ''}`}>
-          {elements.primaryAction && (
+      {/* Card Actions */}
+      {elements && (elements.primaryAction?.text || elements.secondaryAction?.text) && (
+        <div className={`card-actions mt-4 flex gap-4 ${
+          cardLayout.alignment === 'center' ? 'justify-center' : 
+          cardLayout.alignment === 'right' ? 'justify-end' : 
+          'justify-start'
+        }`}>
+          {elements.primaryAction?.text && (
             <ElementRenderer
               element={{
                 type: 'button',
-                props: elements.primaryAction
+                props: {
+                  ...elements.primaryAction,
+                  variant: elements.primaryAction.variant || 'primary',
+                  size: elements.primaryAction.size || 'md'
+                }
               }}
             />
           )}
           
-          {elements.secondaryAction && (
+          {elements.secondaryAction?.text && (
             <ElementRenderer
               element={{
                 type: 'button',
-                props: elements.secondaryAction
+                props: {
+                  ...elements.secondaryAction,
+                  variant: elements.secondaryAction.variant || 'outline',
+                  size: elements.secondaryAction.size || 'md'
+                }
               }}
             />
           )}
